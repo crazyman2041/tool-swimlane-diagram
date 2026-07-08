@@ -233,7 +233,8 @@
 
     .side {
       display: grid;
-      align-content: start;
+      grid-template-rows: minmax(0, 1fr);
+      align-content: stretch;
       gap: 16px;
       min-width: 0;
       min-height: 0;
@@ -242,8 +243,8 @@
     }
 
     .side-content {
-      display: grid;
-      align-content: start;
+      display: flex;
+      flex-direction: column;
       gap: 16px;
       min-height: 0;
       max-height: 100%;
@@ -251,6 +252,10 @@
       overflow-y: auto;
       padding-right: 4px;
       scrollbar-gutter: stable;
+    }
+
+    .side-content > * {
+      flex: 0 0 auto;
     }
 
     .side-rail {
@@ -538,6 +543,10 @@
     .flow-order-list {
       display: grid;
       gap: 8px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-gutter: stable;
     }
 
     .history-actions {
@@ -1369,13 +1378,14 @@
         overflow: visible;
       }
       .app.collapsed { grid-template-columns: 1fr; }
-      .app.collapsed .side-content { display: block; }
+      .app.collapsed .side-content { display: flex; }
       .app.collapsed .side-rail { display: none; }
       .side {
         height: auto;
         overflow: visible;
       }
       .side-content {
+        height: auto;
         max-height: none;
         overflow: visible;
       }
