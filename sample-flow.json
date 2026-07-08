@@ -1,89 +1,56 @@
 {
-  "title": "請假申請流程",
-  "summary": "員工送出請假申請，主管審核後由人資登記，系統通知申請結果。",
-  "lanes": [
-    "申請人",
-    "主管",
-    "人資",
-    "通知系統"
-  ],
-  "nodes": [
+  "doc": {
+    "tool": "tool-swimlane-diagram",
+    "developer": "Jimmy C",
+    "featureName": "請假申請流程",
+    "status": "正式",
+    "background": "員工需要提交請假申請，主管確認人力安排後，由人資完成假勤登記，通知系統回覆申請結果。",
+    "includeScope": "申請人填寫請假表單、表單送出、主管審核、退回補件、核准後人資登記假勤、通知申請結果。",
+    "excludeScope": "薪資計算、年度特休結算、跨系統簽核串接、外部行事曆同步。",
+    "confirmItems": "1. 範例僅示範泳道圖工具操作。\n2. 節點、連線、泳道可依使用者需求自行調整。",
+    "assumptions": "範例假設：主管可核准或退回補件；人資只處理已核准的申請；通知系統只負責結果通知。"
+  },
+  "flows": [
     {
-      "id": "S1",
-      "lane": "申請人",
-      "type": "start",
-      "y": 92,
-      "height": 112,
-      "title": "提出請假申請",
-      "desc": "填寫日期、假別與原因。"
-    },
-    {
-      "id": "S2",
-      "lane": "主管",
-      "type": "decision",
-      "y": 252,
-      "height": 128,
-      "title": "主管審核",
-      "desc": "確認排班、人力與申請資料。"
-    },
-    {
-      "id": "S3",
-      "lane": "申請人",
-      "type": "task",
-      "y": 420,
-      "height": 112,
-      "title": "補充或修正資料",
-      "desc": "資料不足時，依主管要求補件。"
-    },
-    {
-      "id": "S4",
-      "lane": "人資",
-      "type": "task",
-      "y": 420,
-      "height": 112,
-      "title": "登記假勤",
-      "desc": "審核通過後登記假勤紀錄。"
-    },
-    {
-      "id": "S5",
-      "lane": "通知系統",
-      "type": "end",
-      "y": 588,
-      "height": 112,
-      "title": "通知結果",
-      "desc": "通知申請人審核結果。"
+      "id": "flow-1",
+      "name": "請假申請與審核",
+      "version": "正式",
+      "doc": {
+        "featureName": "請假申請與審核",
+        "status": "正式",
+        "background": "員工提交請假申請後，需要主管審核與人資登記，最後通知申請結果。",
+        "includeScope": "請假申請、主管審核、退回補件、人資登記、結果通知。",
+        "excludeScope": "薪資計算、年度特休結算、外部系統串接。",
+        "confirmItems": "範例資料，可自行修改。",
+        "assumptions": "主管可核准或退回補件；人資登記後由通知系統回覆申請人。"
+      },
+      "nodes": [
+        {
+          "id": "L1",
+          "type": "baNode",
+          "position": { "x": 54, "y": 88 },
+          "data": { "lane": "申請人", "kind": "start", "title": "提出請假申請", "desc": "申請人填寫請假日期、假別與原因。", "constraint": "需填寫必要欄位後才能送出。", "width": 344, "height": 176 }
+        },
+        {
+          "id": "L2",
+          "type": "baNode",
+          "position": { "x": 1254, "y": 368 },
+          "data": { "lane": "表單介面", "kind": "form", "title": "送出申請表單", "desc": "表單介面接收申請內容並建立待審核紀錄。", "constraint": "送出後不可直接覆蓋原申請，需保留異動紀錄。", "width": 344, "height": 176 }
+        },
+        {
+          "id": "L3",
+          "type": "baNode",
+          "position": { "x": 454, "y": 672 },
+          "data": { "lane": "主管", "kind": "decision", "title": "主管審核", "desc": "主管確認人力安排、請假原因與資料完整性。", "constraint": "資料不足時退回補件；可核准時送交人資登記。", "width": 344, "height": 200 }
+        }
+      ],
+      "edges": [
+        { "id": "L1-L2", "source": "L1", "target": "L2", "label": "填寫完成", "type": "cleanStep", "sourceHandle": "right-2", "targetHandle": "left-2" },
+        { "id": "L2-L3", "source": "L2", "target": "L3", "label": "送主管審核", "type": "cleanStep", "sourceHandle": "left-2", "targetHandle": "right-1" }
+      ]
     }
   ],
-  "edges": [
-    {
-      "id": "E1",
-      "source": "S1",
-      "target": "S2",
-      "label": "送審"
-    },
-    {
-      "id": "E2",
-      "source": "S2",
-      "target": "S3",
-      "label": "退回補件"
-    },
-    {
-      "id": "E3",
-      "source": "S3",
-      "target": "S2",
-      "label": "重新送審"
-    },
-    {
-      "id": "E4",
-      "source": "S2",
-      "target": "S4",
-      "label": "核准"
-    },
-    {
-      "id": "E5",
-      "source": "S4",
-      "target": "S5",
-      "label": "完成登記"
-    }
-  ]
+  "activeFlowId": "flow-1",
+  "fontSizeMode": "medium",
+  "savedAt": ""
 }

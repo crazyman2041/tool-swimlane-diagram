@@ -3,31 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Swimlane Diagram Tool</title>
+  <meta name="author" content="Jimmy C">
+  <meta name="application-name" content="tool-swimlane-diagram">
+  <title>tool-swimlane-diagram</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xyflow/react@12.11.2/dist/style.css">
   <style>
     :root {
-      --bg: #f5f7fb;
-      --panel: #ffffff;
-      --panel-soft: #f8fafc;
-      --line: #d9e1ec;
-      --line-strong: #aab7c8;
+      --bg: #f4f6fa;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --line: #d8dee8;
+      --line-strong: #aeb8c7;
       --text: #172033;
-      --muted: #637083;
+      --muted: #64748b;
       --blue: #2563eb;
       --green: #047857;
       --amber: #b45309;
       --red: #b91c1c;
-      --shadow: 0 12px 32px rgba(15, 23, 42, 0.09);
+      --purple: #6d28d9;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      min-height: 100vh;
       background: var(--bg);
       color: var(--text);
-      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
       font-size: 15px;
       line-height: 1.5;
     }
@@ -38,7 +41,7 @@
 
     button {
       border: 1px solid var(--line);
-      background: var(--panel);
+      background: var(--surface);
       color: var(--text);
       border-radius: 8px;
       padding: 8px 12px;
@@ -47,719 +50,3743 @@
       white-space: nowrap;
     }
 
-    button:hover { border-color: var(--line-strong); }
-    button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
-    button.danger { border-color: #fecaca; color: var(--red); }
+    button.primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    button.danger {
+      border-color: #fecaca;
+      color: var(--red);
+    }
 
     input, textarea, select {
       width: 100%;
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 9px 10px;
-      background: #fff;
       color: var(--text);
+      background: #fff;
     }
 
-    textarea { min-height: 88px; resize: vertical; }
+    textarea {
+      min-height: 76px;
+      resize: vertical;
+    }
 
     label {
-      display: grid;
-      gap: 6px;
-      color: var(--muted);
       font-size: 13px;
+      color: var(--muted);
       font-weight: 800;
     }
 
     header {
+      min-height: 64px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      min-height: 64px;
-      padding: 12px 18px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.94);
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      backdrop-filter: blur(12px);
+      padding: 12px 24px;
+      background: #0f172a;
+      color: #fff;
+      border-bottom: 1px solid #111827;
     }
 
-    h1 {
+    header h1 {
       margin: 0;
-      font-size: 21px;
+      font-size: 19px;
+      font-weight: 800;
       letter-spacing: 0;
+    }
+
+    header p {
+      margin: 2px 0 0;
+      color: #cbd5e1;
+      font-size: 13px;
     }
 
     .toolbar {
       display: flex;
-      align-items: center;
       gap: 8px;
+      align-items: center;
       flex-wrap: wrap;
     }
 
-    .app {
-      display: grid;
-      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-      min-height: calc(100vh - 65px);
-    }
-
-    aside {
-      border-right: 1px solid var(--line);
-      background: var(--panel);
-      padding: 14px;
-      overflow: auto;
-      max-height: calc(100vh - 65px);
-    }
-
-    main {
-      min-width: 0;
-      overflow: auto;
-      padding: 16px;
-    }
-
-    .section {
-      border-bottom: 1px solid var(--line);
-      padding: 0 0 14px;
-      margin: 0 0 14px;
-    }
-
-    .section:last-child {
-      border-bottom: 0;
-      margin-bottom: 0;
-    }
-
-    .section h2 {
-      margin: 0 0 10px;
-      font-size: 15px;
-    }
-
-    .form-grid {
-      display: grid;
-      gap: 10px;
-    }
-
-    .split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .status {
+    .font-size-control {
       display: inline-flex;
       align-items: center;
-      min-height: 34px;
-      padding: 6px 10px;
+      gap: 4px;
+      padding: 3px;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .font-size-control span {
+      padding: 0 5px;
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .font-size-control button {
+      min-width: 34px;
+      padding: 4px 8px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #dbeafe;
+      font-size: 13px;
+    }
+
+    .font-size-control button.active {
+      background: #eff6ff;
+      color: var(--blue);
+    }
+
+    .mode-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .mode-control button {
+      min-width: 64px;
+      padding: 4px 10px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #dbeafe;
+      font-size: 13px;
+    }
+
+    .mode-control button.active {
+      background: #eff6ff;
+      color: var(--blue);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 8px;
       border: 1px solid var(--line);
       border-radius: 999px;
-      background: var(--panel-soft);
+      background: #fff;
       color: var(--muted);
       font-size: 13px;
       font-weight: 800;
     }
 
-    .board-wrap {
-      position: relative;
-      width: max-content;
-      min-width: 100%;
+    .tag.info { color: var(--blue); border-color: #bfdbfe; background: #eff6ff; }
+    .tag.wait { color: var(--amber); border-color: #fde68a; background: #fffbeb; }
+    .tag.ok { color: var(--green); border-color: #bbf7d0; background: #f0fdf4; }
+    .tag.danger { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+    .tag.formal { color: #065f46; border-color: #86efac; background: #dcfce7; }
+    .tag.draft { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(350px, 440px) minmax(860px, 1fr);
+      gap: 16px;
+      padding: 16px;
+      min-height: calc(100vh - 64px);
+    }
+
+    .app.collapsed {
+      grid-template-columns: 48px minmax(860px, 1fr);
+    }
+
+    .side {
+      display: grid;
+      align-content: start;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .side-rail {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 96px);
       border: 1px solid var(--line);
-      background: var(--panel);
+      border-radius: 8px;
+      background: var(--surface);
       box-shadow: var(--shadow);
+    }
+
+    .side-rail button {
+      writing-mode: vertical-rl;
+      min-height: 132px;
+      padding: 12px 8px;
+      border-color: #bfdbfe;
+      color: var(--blue);
+      background: #eff6ff;
+    }
+
+    .app.collapsed .side-content { display: none; }
+    .app.collapsed .side-rail { display: flex; }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      min-width: 0;
       overflow: hidden;
     }
 
-    .board {
+    details.panel > summary {
+      list-style: none;
+      cursor: pointer;
+    }
+
+    details.panel > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-2);
+    }
+
+    details.panel:not([open]) .panel-head {
+      border-bottom: 0;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .panel-body {
+      padding: 14px 16px 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .lane-select {
       position: relative;
-      min-height: 760px;
+    }
+
+    .lane-select-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .lane-select-menu {
+      position: absolute;
+      z-index: 50;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      max-height: 260px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      padding: 6px;
+    }
+
+    .lane-select-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 34px;
+      gap: 6px;
+      align-items: center;
+      padding: 3px;
+    }
+
+    .lane-select-row button {
+      min-height: 34px;
+      padding: 6px 8px;
+    }
+
+    .lane-select-choice {
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lane-select-choice.active {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: #eff6ff;
+    }
+
+    .lane-delete {
+      color: var(--red);
+      border-color: #fecaca;
+    }
+
+    .lane-add {
+      width: 100%;
+      margin-top: 4px;
+      color: var(--blue);
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status-note {
+      display: grid;
+      gap: 6px;
+      margin: -2px 0 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .flow-area {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .presentation-app {
+      padding: 8px 16px 16px;
+      min-height: calc(100vh - 64px);
+    }
+
+    .presentation-app .flow-area {
+      grid-template-rows: 1fr;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      scrollbar-width: thin;
+      cursor: grab;
+      user-select: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tabs.dragging {
+      cursor: grabbing;
+    }
+
+    .tabs::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .tabs::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+      border: 2px solid #fff;
+    }
+
+    .tabs::-webkit-scrollbar-track {
+      background: #f8fafc;
+    }
+
+    .tab {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 7px 12px;
+      color: var(--muted);
+      background: #fff;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: var(--blue);
+    }
+
+    .tab-version {
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .tab-version.formal {
+      background: #dcfce7;
+      color: #047857;
+    }
+
+    .flow-order-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .flow-order-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
       background: #fff;
     }
 
-    .lanes {
+    .flow-order-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .flow-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .modal-panel {
+      width: min(760px, calc(100vw - 48px));
+      max-height: calc(100vh - 72px);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+    }
+
+    .modal-head {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .modal-body {
+      padding: 16px;
+    }
+
+    .flow-shell {
+      min-height: 720px;
       display: grid;
-      height: 100%;
-      min-height: 760px;
+      grid-template-rows: auto auto 1fr;
     }
 
-    .lane {
-      border-right: 1px solid var(--line);
-      background: linear-gradient(#fff, #fff), var(--panel-soft);
+    .presentation-mode .flow-shell {
+      min-height: calc(100vh - 88px);
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .flow-canvas {
       position: relative;
+      min-height: 640px;
     }
 
-    .lane:nth-child(even) {
-      background: #f9fbfe;
+    .presentation-mode .flow-canvas {
+      min-height: calc(100vh - 176px);
     }
 
-    .lane:last-child { border-right: 0; }
+    .flow-brief {
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .flow-brief summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .flow-brief summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .flow-brief summary strong {
+      font-size: 15px;
+    }
+
+    .flow-brief-body {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 12px;
+      padding: 12px 14px 14px;
+    }
+
+    .brief-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .brief-item b {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .brief-item p {
+      margin: 0;
+    }
+
+    .sticky-lane-bar-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 35;
+      height: 54px;
+      overflow: hidden;
+      border-bottom: 1px solid #cbd5e1;
+      background: rgba(248, 250, 252, 0.98);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .sticky-lane-bar {
+      display: grid;
+      background: rgba(248, 250, 252, 0.98);
+      transform-origin: 0 0;
+      pointer-events: none;
+    }
+
+    .sticky-lane-cell {
+      min-height: 48px;
+      padding: 8px 12px;
+      border-right: 1px solid #cbd5e1;
+      font-weight: 900;
+    }
+
+    .sticky-lane-cell small {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .sticky-lane-cell strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .lane-node {
+      height: 100%;
+      border-right: 1px solid #cbd5e1;
+      background: var(--lane-bg, rgba(255, 255, 255, 0.72));
+      pointer-events: none;
+    }
+
+    .react-flow__node-laneNode {
+      pointer-events: none !important;
+    }
 
     .lane-title {
       position: sticky;
       top: 0;
-      z-index: 5;
-      min-height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      z-index: 3;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--line);
-      background: rgba(248, 250, 252, 0.95);
+      background: rgba(248, 250, 252, 0.98);
       font-weight: 900;
-      color: #334155;
-      backdrop-filter: blur(8px);
     }
 
-    .connections {
-      position: absolute;
-      inset: 48px 0 0;
+    .lane-title small {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .lane-title strong {
+      display: block;
+      font-size: 20px;
+    }
+
+    .presentation-mode .lane-node .lane-title {
+      visibility: hidden;
+    }
+
+    .react-flow {
+      position: relative;
+      z-index: 1;
+      background: #f8fafc;
+    }
+
+    .react-flow__pane {
+      cursor: default;
+    }
+
+    .react-flow__edge-path {
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .react-flow__handle {
+      width: 11px;
+      height: 11px;
+      border: 2px solid #fff;
+    }
+
+    .ba-node {
       width: 100%;
-      height: calc(100% - 48px);
-      pointer-events: none;
-      z-index: 6;
-    }
-
-    .node {
-      position: absolute;
-      z-index: 10;
-      width: 230px;
-      min-height: 108px;
-      border: 2px solid #cbd5e1;
+      height: 100%;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
       border-radius: 8px;
       background: #fff;
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
-      padding: 10px;
-      cursor: grab;
-      user-select: none;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+      padding: 12px;
+      color: var(--text);
+      box-sizing: border-box;
+      overflow: visible;
     }
 
-    .node:active { cursor: grabbing; }
-    .node.selected { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.16); }
-    .node.start { border-color: #86efac; }
-    .node.task { border-color: #93c5fd; }
-    .node.decision { border-color: #fbbf24; }
-    .node.end { border-color: #c4b5fd; }
+    .ba-node.selected {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
 
-    .node-head {
+    .ba-node.edge-focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.24), 0 8px 20px rgba(15, 23, 42, 0.1);
+    }
+
+    .ba-node.related-focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
+    }
+
+    .ba-node.unlinked {
+      border-color: #fca5a5;
+      box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.08);
+    }
+
+    .ba-node.start { border-left-color: var(--green); }
+    .ba-node.end { border-left-color: #334155; }
+    .ba-node.decision { border-left-color: var(--amber); }
+    .ba-node.form { border-left-color: var(--purple); }
+    .ba-node.exception { border-left-color: var(--red); }
+    .ba-node.note {
+      border-left-color: var(--amber);
+      background: #fffbeb;
+    }
+
+    .ba-node.decision {
+      position: relative;
       display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: 54px 62px;
+      text-align: center;
+    }
+
+    .ba-node.decision::before,
+    .ba-node.decision::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    }
+
+    .ba-node.decision::before {
+      inset: 0;
+      background: var(--amber);
+      filter: drop-shadow(0 6px 18px rgba(15, 23, 42, 0.08));
+    }
+
+    .ba-node.decision::after {
+      inset: 2px;
+      background: #fffbeb;
+    }
+
+    .ba-node.decision > :not(.react-flow__handle) {
+      position: relative;
+      z-index: 1;
+    }
+
+    .ba-node.decision .react-flow__handle {
+      position: absolute;
+      z-index: 2;
+    }
+
+    .ba-node.decision.selected::before {
+      background: var(--blue);
+      filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0.18)) drop-shadow(0 6px 18px rgba(15, 23, 42, 0.08));
+    }
+
+    .ba-node.decision.edge-focus::before {
+      background: var(--amber);
+      filter: drop-shadow(0 0 4px rgba(180, 83, 9, 0.42)) drop-shadow(0 8px 20px rgba(15, 23, 42, 0.1));
+    }
+
+    .ba-node.decision.related-focus::before {
+      background: var(--green);
+    }
+
+    .ba-node.decision.unlinked::before {
+      background: var(--red);
+    }
+
+    .ba-node.decision .node-meta {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .node-meta {
+      display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 8px;
-      align-items: center;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
       margin-bottom: 6px;
     }
 
-    .node-id {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 900;
+    .node-symbol {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      margin-right: 6px;
+      font-size: 14px;
+      color: #fff;
+      background: var(--blue);
     }
 
-    .node-type {
-      border-radius: 999px;
-      padding: 2px 7px;
-      background: var(--panel-soft);
-      color: #475569;
-      font-size: 12px;
-      font-weight: 900;
-    }
+    .node-symbol.start { background: var(--green); }
+    .node-symbol.end { background: #334155; }
+    .node-symbol.decision { background: var(--amber); }
+    .node-symbol.form { background: var(--purple); }
+    .node-symbol.exception { background: var(--red); }
+    .node-symbol.note { background: var(--amber); }
 
     .node-title {
-      font-size: 16px;
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.35;
       font-weight: 900;
-      margin-bottom: 6px;
-      overflow-wrap: anywhere;
     }
 
     .node-desc {
-      color: #475569;
-      font-size: 13px;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .edge-label {
-      position: absolute;
-      z-index: 9;
-      padding: 3px 8px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.92);
-      color: #334155;
-      font-size: 12px;
-      font-weight: 900;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-
-    .list {
-      display: grid;
-      gap: 6px;
-      max-height: 220px;
-      overflow: auto;
-      padding-right: 2px;
-    }
-
-    .list button {
-      display: grid;
-      grid-template-columns: 52px 1fr;
-      gap: 8px;
-      text-align: left;
-      white-space: normal;
-      padding: 8px;
-    }
-
-    .list button.active {
-      border-color: var(--blue);
-      background: #eff6ff;
-    }
-
-    .small {
+      margin: 0;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 16px;
+      line-height: 1.5;
     }
 
-    .hidden-file {
-      display: none;
+    .node-detail {
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px solid #eef2f7;
+      color: #475569;
+      font-size: 15px;
+      line-height: 1.5;
     }
 
-    @media (max-width: 900px) {
-      header {
-        align-items: flex-start;
-        flex-direction: column;
-      }
+    .node-warning {
+      margin-left: 6px;
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 900;
+    }
 
-      .app {
-        grid-template-columns: 1fr;
-      }
+    .font-small .app,
+    .font-small .presentation-app {
+      font-size: 15px;
+    }
 
-      aside {
-        max-height: none;
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-      }
+    .font-medium .app,
+    .font-medium .presentation-app {
+      font-size: 16px;
+    }
+
+    .font-small .lane-title {
+      padding: 10px 12px;
+    }
+
+    .font-small .lane-title small {
+      font-size: 13px;
+    }
+
+    .font-small .lane-title strong {
+      font-size: 18px;
+    }
+
+    .font-small .ba-node {
+      padding: 10px;
+    }
+
+    .font-small .ba-node.decision {
+      padding: 48px 56px;
+    }
+
+    .font-small .node-meta {
+      font-size: 13px;
+    }
+
+    .font-small .node-symbol {
+      width: 24px;
+      height: 24px;
+      font-size: 13px;
+    }
+
+    .font-small .node-title {
+      font-size: 18px;
+    }
+
+    .font-small .node-desc,
+    .font-small .node-detail {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .font-large .app,
+    .font-large .presentation-app {
+      font-size: 18px;
+    }
+
+    .font-large .lane-title {
+      padding: 14px 16px;
+    }
+
+    .font-large .lane-title small {
+      font-size: 15px;
+    }
+
+    .font-large .lane-title strong {
+      font-size: 22px;
+    }
+
+    .font-large .ba-node {
+      padding: 14px;
+    }
+
+    .font-large .ba-node.decision {
+      padding: 60px 68px;
+    }
+
+    .font-large .node-meta {
+      font-size: 15px;
+    }
+
+    .font-large .node-symbol {
+      width: 30px;
+      height: 30px;
+      font-size: 16px;
+    }
+
+    .font-large .node-title {
+      font-size: 23px;
+    }
+
+    .font-large .node-desc,
+    .font-large .node-detail {
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .react-flow__handle {
+      width: 22px;
+      height: 22px;
+      border: 0;
+      background: transparent;
+      opacity: 0.26;
+    }
+
+    .react-flow__handle.handle-dual::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 5px;
+      height: 5px;
+      border-radius: 999px;
+      background: #2563eb;
+      border: 1px solid rgba(255, 255, 255, 0.92);
+      transform: translate(-50%, -50%);
+      transition: width 120ms ease, height 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    }
+
+    .ba-node:hover .react-flow__handle.handle-dual,
+    .ba-node.selected .react-flow__handle.handle-dual {
+      opacity: 0.74;
+    }
+
+    .ba-node:hover .react-flow__handle.handle-dual::after,
+    .ba-node.selected .react-flow__handle.handle-dual::after {
+      width: 8px;
+      height: 8px;
+      box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.11);
+    }
+
+    .react-flow__handle.connecting,
+    .react-flow__handle.valid {
+      opacity: 1;
+    }
+
+    .react-flow__handle.handle-dual.connecting::after,
+    .react-flow__handle.handle-dual.valid::after {
+      width: 13px;
+      height: 13px;
+      background: var(--green);
+      box-shadow: 0 0 0 13px rgba(4, 120, 87, 0.14);
+    }
+
+    .react-flow__resize-control {
+      z-index: 16;
+    }
+
+    .react-flow__resize-control.handle {
+      width: 24px !important;
+      height: 24px !important;
+      border: 2px solid #2563eb !important;
+      border-radius: 999px !important;
+      background: #fff !important;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.24);
+    }
+
+    .react-flow__resize-control.line {
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    .react-flow__resize-control.line.left,
+    .react-flow__resize-control.line.right {
+      width: 24px !important;
+    }
+
+    .react-flow__resize-control.line.top,
+    .react-flow__resize-control.line.bottom {
+      height: 24px !important;
+    }
+
+    .react-flow__resize-control.line::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.72);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+    }
+
+    .react-flow__resize-control.line.left::after,
+    .react-flow__resize-control.line.right::after {
+      top: 0;
+      bottom: 0;
+      left: 11px;
+      width: 2px;
+    }
+
+    .react-flow__resize-control.line.top::after,
+    .react-flow__resize-control.line.bottom::after {
+      left: 0;
+      right: 0;
+      top: 11px;
+      height: 2px;
+    }
+
+    .react-flow__edge-textbg {
+      fill: #fff;
+      stroke: #cbd5e1;
+      stroke-width: 1.5;
+    }
+
+    .react-flow__edge-text {
+      font-size: 18px;
+      font-weight: 900;
+      fill: #0f172a;
+    }
+
+    .font-small .react-flow__edge-text {
+      font-size: 16px;
+    }
+
+    .font-large .react-flow__edge-text {
+      font-size: 22px;
+    }
+
+    pre {
+      margin: 0;
+      min-height: 300px;
+      max-height: 520px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #0b1020;
+      color: #e5e7eb;
+      font: 13px/1.6 Consolas, "Courier New", monospace;
+    }
+
+    .output-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 1280px) {
+      .app { grid-template-columns: 1fr; }
+      .app.collapsed { grid-template-columns: 1fr; }
+      .app.collapsed .side-content { display: block; }
+      .app.collapsed .side-rail { display: none; }
+      .flow-brief-body { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .flow-brief-body { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Swimlane Diagram Tool</h1>
-    <div class="toolbar">
-      <span class="status" id="saveStatus">Ready</span>
-      <button type="button" id="addNode">新增節點</button>
-      <button type="button" id="connectNodes">連線</button>
-      <button type="button" id="exportJson" class="primary">匯出 JSON</button>
-      <button type="button" id="importJson">匯入 JSON</button>
-      <button type="button" id="resetSample">還原範例</button>
-      <input id="fileInput" class="hidden-file" type="file" accept="application/json,.json">
-    </div>
-  </header>
+  <div id="root"></div>
 
-  <div class="app">
-    <aside>
-      <section class="section">
-        <h2>文件</h2>
-        <div class="form-grid">
-          <label>流程名稱
-            <input id="docTitle">
-          </label>
-          <label>流程說明
-            <textarea id="docSummary"></textarea>
-          </label>
-          <label>泳道
-            <textarea id="laneText"></textarea>
-          </label>
-        </div>
-      </section>
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "@xyflow/react": "https://esm.sh/@xyflow/react@12.11.2?external=react,react-dom"
+      }
+    }
+  </script>
 
-      <section class="section">
-        <h2>節點</h2>
-        <div class="list" id="nodeList"></div>
-      </section>
+  <script type="module">
+    import React, { useCallback, useMemo, useState } from "react";
+    import { createRoot } from "react-dom/client";
+    import {
+      ReactFlow,
+      ReactFlowProvider,
+      Controls,
+      ConnectionMode,
+      Handle,
+      NodeResizer,
+      Position,
+      addEdge,
+      reconnectEdge,
+      useUpdateNodeInternals,
+      useEdgesState,
+      useNodesState
+    } from "@xyflow/react";
 
-      <section class="section">
-        <h2>編輯選取節點</h2>
-        <div class="form-grid">
-          <label>節點 ID
-            <input id="nodeId" readonly>
-          </label>
-          <label>泳道
-            <select id="nodeLane"></select>
-          </label>
-          <label>類型
-            <select id="nodeType">
-              <option value="start">起點</option>
-              <option value="task">工作</option>
-              <option value="decision">判斷</option>
-              <option value="end">終點</option>
-            </select>
-          </label>
-          <label>標題
-            <input id="nodeTitle">
-          </label>
-          <label>說明
-            <textarea id="nodeDesc"></textarea>
-          </label>
-          <div class="split">
-            <label>Y 位置
-              <input id="nodeY" type="number" min="80" step="10">
-            </label>
-            <label>高度
-              <input id="nodeHeight" type="number" min="90" step="10">
-            </label>
-          </div>
-          <button type="button" id="deleteNode" class="danger">刪除節點</button>
-        </div>
-      </section>
+    const h = React.createElement;
+    const laneGroups = [
+      { group: "人物", lanes: ["申請人", "主管", "人資"] },
+      { group: "系統", lanes: ["表單介面", "通知系統", "假勤記錄"] }
+    ];
+    const laneOptions = laneGroups.flatMap((group) => group.lanes);
+    const laneGroupByName = Object.fromEntries(laneGroups.flatMap((group) => group.lanes.map((lane) => [lane, group.group])));
+    const customLaneOptionValue = "__add_custom_lane__";
+    const legacyLaneMap = {
+      使用者: "申請人",
+      管理者: "主管",
+      表單: "表單介面",
+      系統: "通知系統",
+      記錄: "假勤記錄"
+    };
+    const laneWidth = 400;
+    const noteLaneName = "備註";
+    const noteLaneWidth = 360;
+    const noteNodeWidth = noteLaneWidth - 48;
+    const defaultNoteHeight = 180;
+    const minNoteHeight = 96;
+    const minNodeWidth = 220;
+    const minNodeHeight = 72;
+    const maxNodeWidth = laneWidth - 56;
+    const legacyDefaultNodeWidth = 292;
+    const legacyDefaultNodeHeight = 190;
+    const defaultNodeWidth = maxNodeWidth;
+    const defaultNodeHeight = 230;
+    const maxNodeHeight = 1200;
+    const nodeGap = 56;
+    const lanePadding = 54;
+    const maxCanvasHeight = 12000;
+    const canvasHeight = maxCanvasHeight;
+    const edgeTextClearance = 112;
+    const kindLabel = {
+      start: "起點",
+      task: "作業",
+      decision: "判斷",
+      form: "表單",
+      exception: "例外",
+      note: "備註",
+      end: "終點"
+    };
+    const kindSymbol = {
+      start: "起",
+      task: "作",
+      decision: "?",
+      form: "表",
+      exception: "!",
+      note: "註",
+      end: "終"
+    };
+    const connectionPointIds = [
+      "top-1", "top-2", "top-3",
+      "right-1", "right-2", "right-3",
+      "bottom-1", "bottom-2", "bottom-3",
+      "left-1", "left-2", "left-3"
+    ];
+    const sourceHandleOptions = connectionPointIds;
+    const targetHandleOptions = connectionPointIds;
+    const nodeHandleIds = connectionPointIds;
+    const connectionPointLabels = {
+      "top-1": "上方左連接點",
+      "top-2": "上方中連接點",
+      "top-3": "上方右連接點",
+      "right-1": "右側上連接點",
+      "right-2": "右側中連接點",
+      "right-3": "右側下連接點",
+      "bottom-1": "下方左連接點",
+      "bottom-2": "下方中連接點",
+      "bottom-3": "下方右連接點",
+      "left-1": "左側上連接點",
+      "left-2": "左側中連接點",
+      "left-3": "左側下連接點"
+    };
+    const edgeHandleLabels = connectionPointLabels;
+    const legacyHandlePointMap = {
+      "source-right": "right-2",
+      "target-right": "right-2",
+      "source-bottom": "bottom-2",
+      "target-bottom": "bottom-2",
+      "source-left": "left-2",
+      "target-left": "left-2",
+      "source-top": "top-2",
+      "target-top": "top-2",
+      "handle-top": "top-2",
+      "handle-right": "right-2",
+      "handle-bottom": "bottom-2",
+      "handle-left": "left-2"
+    };
+    const connectionHandleDefinitions = [
+      { pointId: "top-1", position: Position.Top, style: { left: "25%" } },
+      { pointId: "top-2", position: Position.Top, style: { left: "50%" } },
+      { pointId: "top-3", position: Position.Top, style: { left: "75%" } },
+      { pointId: "right-1", position: Position.Right, style: { top: "25%" } },
+      { pointId: "right-2", position: Position.Right, style: { top: "50%" } },
+      { pointId: "right-3", position: Position.Right, style: { top: "75%" } },
+      { pointId: "bottom-1", position: Position.Bottom, style: { left: "25%" } },
+      { pointId: "bottom-2", position: Position.Bottom, style: { left: "50%" } },
+      { pointId: "bottom-3", position: Position.Bottom, style: { left: "75%" } },
+      { pointId: "left-1", position: Position.Left, style: { top: "25%" } },
+      { pointId: "left-2", position: Position.Left, style: { top: "50%" } },
+      { pointId: "left-3", position: Position.Left, style: { top: "75%" } }
+    ];
+    const diamondHandleStyle = (x, y) => ({
+      left: `${Math.round(x)}px`,
+      top: `${Math.round(y)}px`,
+      right: "auto",
+      bottom: "auto",
+      transform: "translate(-50%, -50%)"
+    });
+    function decisionConnectionHandleDefinitions(width, height) {
+      const w = Number(width) || defaultNodeWidth;
+      const hgt = Number(height) || defaultNodeHeight;
+      return [
+        { pointId: "top-1", position: Position.Top, style: diamondHandleStyle(w * 0.35, hgt * 0.15) },
+        { pointId: "top-2", position: Position.Top, style: diamondHandleStyle(w * 0.5, 0) },
+        { pointId: "top-3", position: Position.Top, style: diamondHandleStyle(w * 0.65, hgt * 0.15) },
+        { pointId: "right-1", position: Position.Right, style: diamondHandleStyle(w * 0.85, hgt * 0.35) },
+        { pointId: "right-2", position: Position.Right, style: diamondHandleStyle(w, hgt * 0.5) },
+        { pointId: "right-3", position: Position.Right, style: diamondHandleStyle(w * 0.85, hgt * 0.65) },
+        { pointId: "bottom-1", position: Position.Bottom, style: diamondHandleStyle(w * 0.65, hgt * 0.85) },
+        { pointId: "bottom-2", position: Position.Bottom, style: diamondHandleStyle(w * 0.5, hgt) },
+        { pointId: "bottom-3", position: Position.Bottom, style: diamondHandleStyle(w * 0.35, hgt * 0.85) },
+        { pointId: "left-1", position: Position.Left, style: diamondHandleStyle(w * 0.15, hgt * 0.35) },
+        { pointId: "left-2", position: Position.Left, style: diamondHandleStyle(0, hgt * 0.5) },
+        { pointId: "left-3", position: Position.Left, style: diamondHandleStyle(w * 0.15, hgt * 0.65) }
+      ];
+    }
 
-      <section class="section">
-        <h2>連線</h2>
-        <div class="form-grid">
-          <label>起點
-            <select id="edgeSource"></select>
-          </label>
-          <label>終點
-            <select id="edgeTarget"></select>
-          </label>
-          <label>文字
-            <input id="edgeLabel" value="下一步">
-          </label>
-          <button type="button" id="addEdge">新增連線</button>
-          <button type="button" id="clearEdges" class="danger">清除所有連線</button>
-        </div>
-      </section>
-
-      <p class="small">資料只儲存在此瀏覽器 localStorage；匯出 JSON 可自行保存或版本控管。</p>
-    </aside>
-
-    <main>
-      <div class="board-wrap">
-        <div class="board" id="board">
-          <div class="lanes" id="lanes"></div>
-          <svg class="connections" id="connections"></svg>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <script>
-    const STORAGE_KEY = "public.swimlane.diagram.tool.v1";
-    const laneWidth = 280;
-    const headerHeight = 48;
-    const nodeWidth = 230;
-    const sample = {
-      title: "請假申請流程",
-      summary: "員工送出請假申請，主管審核後由人資登記，系統通知申請結果。",
-      lanes: ["申請人", "主管", "人資", "通知系統"],
-      nodes: [
-        { id: "S1", lane: "申請人", type: "start", y: 92, height: 112, title: "提出請假申請", desc: "填寫日期、假別與原因。" },
-        { id: "S2", lane: "主管", type: "decision", y: 252, height: 128, title: "主管審核", desc: "確認排班、人力與申請資料。" },
-        { id: "S3", lane: "申請人", type: "task", y: 420, height: 112, title: "補充或修正資料", desc: "資料不足時，依主管要求補件。" },
-        { id: "S4", lane: "人資", type: "task", y: 420, height: 112, title: "登記假勤", desc: "審核通過後登記假勤紀錄。" },
-        { id: "S5", lane: "通知系統", type: "end", y: 588, height: 112, title: "通知結果", desc: "通知申請人審核結果。" }
-      ],
-      edges: [
-        { id: "E1", source: "S1", target: "S2", label: "送審" },
-        { id: "E2", source: "S2", target: "S3", label: "退回補件" },
-        { id: "E3", source: "S3", target: "S2", label: "重新送審" },
-        { id: "E4", source: "S2", target: "S4", label: "核准" },
-        { id: "E5", source: "S4", target: "S5", label: "完成登記" }
-      ]
+    const initialDoc = {
+      tool: "tool-swimlane-diagram",
+      developer: "Jimmy C",
+      featureName: "請假申請流程",
+      status: "正式",
+      background: "員工需要提交請假申請，主管確認人力安排後，由人資完成假勤登記，通知系統回覆申請結果。",
+      includeScope: "申請人填寫請假表單、表單送出、主管審核、退回補件、核准後人資登記假勤、通知申請結果。",
+      excludeScope: "薪資計算、年度特休結算、跨系統簽核串接、外部行事曆同步。",
+      confirmItems: "1. 範例僅示範泳道圖工具操作。\n2. 節點、連線、泳道可依使用者需求自行調整。",
+      assumptions: "範例假設：主管可核准或退回補件；人資只處理已核准的申請；通知系統只負責結果通知。"
     };
 
-    let state = loadState();
-    let selectedId = state.nodes[0]?.id || "";
-    let dragState = null;
+    const initialFlows = [
+      {
+        id: "flow-1",
+        name: "請假申請與審核",
+        version: "正式",
+        nodes: [
+          node("L1", "申請人", "start", 54, 88, "提出請假申請", "申請人填寫請假日期、假別與原因。", "需填寫必要欄位後才能送出。", { height: 176 }),
+          node("L2", "表單介面", "form", 1254, 368, "送出申請表單", "表單介面接收申請內容並建立待審核紀錄。", "送出後不可直接覆蓋原申請，需保留異動紀錄。", { height: 176 }),
+          node("L3", "主管", "decision", 454, 672, "主管審核", "主管確認人力安排、請假原因與資料完整性。", "資料不足時退回補件；可核准時送交人資登記。", { height: 200 }),
+          node("L4", "申請人", "task", 54, 976, "補充或修正資料", "申請人依主管退回原因補充資料後重新送出。", "補件後回到主管審核。", { height: 176 }),
+          node("L5", "人資", "task", 854, 976, "登記假勤", "人資確認核准結果，完成假勤紀錄登記。", "只處理已核准申請。", { height: 176 }),
+          node("L6", "假勤記錄", "form", 2054, 1280, "保存假勤紀錄", "系統保存請假期間、假別、審核結果與登記時間。", "紀錄需可追溯申請與審核節點。", { height: 184 }),
+          node("L7", "通知系統", "end", 1654, 1584, "通知申請結果", "通知系統將核准、退回或完成登記結果通知申請人。", "通知內容需包含目前狀態與下一步。", { height: 184 }),
+          noteNode("LN1", 88, "範例備註", "此流程是公開版通用範例，不含任何特定專案資料。可用來示範節點拖曳、泳道歸類、連線標籤與 JSON 匯出。")
+        ],
+        edges: [
+          edge("L1", "L2", "填寫完成"),
+          edge("L2", "L3", "送主管審核", { sourceHandle: "left-2", targetHandle: "right-1" }),
+          edge("L3", "L4", "退回補件", { sourceHandle: "left-3", targetHandle: "right-1" }),
+          edge("L4", "L2", "重新送出", { sourceHandle: "right-3", targetHandle: "left-3" }),
+          edge("L3", "L5", "核准", { sourceHandle: "right-3", targetHandle: "left-1" }),
+          edge("L5", "L6", "完成登記", { sourceHandle: "right-2", targetHandle: "left-2" }),
+          edge("L6", "L7", "通知結果", { sourceHandle: "left-2", targetHandle: "right-2" })
+        ],
+        doc: {
+          featureName: "請假申請與審核",
+          status: "正式",
+          background: "員工提交請假申請後，需要主管審核與人資登記，最後通知申請結果。",
+          includeScope: "請假申請、主管審核、退回補件、人資登記、結果通知。",
+          excludeScope: "薪資計算、年度特休結算、外部系統串接。",
+          confirmItems: "範例資料，可自行修改。",
+          assumptions: "主管可核准或退回補件；人資登記後由通知系統回覆申請人。"
+        }
+      },
+      {
+        id: "flow-2",
+        name: "請假申請取消",
+        version: "非正式",
+        nodes: [
+          node("C1", "申請人", "start", 54, 88, "提出取消需求", "申請人因行程變更提出取消請假申請。", "僅適用尚未開始或尚未完成結算的申請。", { height: 176 }),
+          node("C2", "表單介面", "form", 1254, 368, "接收取消申請", "表單介面接收取消原因並建立取消紀錄。", "需保留原申請與取消原因。", { height: 176 }),
+          node("C3", "主管", "decision", 454, 672, "確認是否可取消", "主管確認排班與申請狀態，判斷是否同意取消。", "若已影響排班，需補充處理說明。", { height: 200 }),
+          node("C4", "人資", "task", 854, 976, "更新假勤狀態", "人資依主管確認結果更新假勤紀錄。", "取消後不得刪除原申請歷程。", { height: 176 }),
+          node("C5", "通知系統", "end", 1654, 1280, "通知取消結果", "通知系統回覆申請人取消是否完成。", "結果需說明是否仍需後續處理。", { height: 176 }),
+          noteNode("CN1", 88, "取消流程備註", "此流程示範同一工具內可管理多張泳道圖。")
+        ],
+        edges: [
+          edge("C1", "C2", "送出取消"),
+          edge("C2", "C3", "送主管確認", { sourceHandle: "left-2", targetHandle: "right-1" }),
+          edge("C3", "C4", "同意取消", { sourceHandle: "right-3", targetHandle: "left-1" }),
+          edge("C4", "C5", "更新完成", { sourceHandle: "right-2", targetHandle: "left-2" }),
+          edge("C3", "C5", "不同意取消", { sourceHandle: "right-1", targetHandle: "left-1" })
+        ],
+        doc: {
+          featureName: "請假申請取消",
+          status: "非正式",
+          background: "申請人可能需要取消已送出的請假申請，主管與人資需保留處理紀錄。",
+          includeScope: "取消申請、主管確認、人資更新、結果通知。",
+          excludeScope: "薪資結算與外部系統同步。",
+          confirmItems: "範例資料，可自行修改。",
+          assumptions: "取消流程需保留原申請與取消原因。"
+        }
+      }
+    ];
 
-    const el = (id) => document.getElementById(id);
-    const board = el("board");
-    const lanesEl = el("lanes");
-    const connectionsEl = el("connections");
-
-    function clone(value) {
-      return JSON.parse(JSON.stringify(value));
+    const emptyFlowDoc = {
+      featureName: "",
+      status: "",
+      background: "",
+      includeScope: "",
+      excludeScope: "",
+      confirmItems: "",
+      assumptions: ""
+    };
+    const flowDocDefaults = Object.fromEntries(initialFlows.map((flow) => [flow.id, flow.doc || emptyFlowDoc]));
+    function normalizeFlowDoc(flow) {
+      const version = flowVersions.includes(flow?.version) ? flow.version : "非正式";
+      const fallback = flowDocDefaults[flow?.id] || {
+        featureName: flow?.name || "未命名流程圖",
+        status: version,
+        background: "",
+        includeScope: "",
+        excludeScope: "",
+        confirmItems: "",
+        assumptions: ""
+      };
+      return {
+        ...emptyFlowDoc,
+        ...fallback,
+        ...(flow?.doc || {}),
+        featureName: flow?.doc?.featureName || fallback.featureName || flow?.name || "未命名流程圖",
+        status: flow?.doc?.status || fallback.status || version
+      };
     }
 
-    function loadState() {
+    function getFlowDoc(flow) {
+      return normalizeFlowDoc(flow);
+    }
+
+    const STORAGE_KEY = "tool.swimlane.diagram.reactFlow.v2";
+    const PERSIST_DB_NAME = "tool-swimlane-diagram-persistence";
+    const PERSIST_DB_VERSION = 1;
+    const PERSIST_STORE_NAME = "fileHandles";
+    const PERSIST_HANDLE_KEY = "activeJsonFile";
+    const AUTO_PERSIST_FILE_NAME = "tool-swimlane-diagram-autosave-v2.data";
+    const LOCAL_AUTOSAVE_API = "";
+    const LOCAL_AUTOSAVE_HEALTH_API = "";
+    const LOCAL_AUTOSAVE_CONTROL_API = "";
+    const LOCAL_AUTOSAVE_OPEN_API = "";
+    const LOCAL_AUTOSAVE_FILE_NAME = "tool-swimlane-diagram.autosave.json";
+    const AUTOSAVE_ENABLED_KEY = "tool.swimlane.diagram.autosaveEnabled";
+    const fontSizeModes = ["small", "medium", "large"];
+    const fontSizeLabels = { small: "小", medium: "中", large: "大" };
+    const flowVersions = ["非正式", "正式"];
+
+    function getDocumentVersion(flows) {
+      return flows.length > 0 && flows.every((flow) => flow.version === "正式") ? "正式" : "非正式";
+    }
+
+    function getDefaultState() {
+      return { doc: initialDoc, flows: initialFlows.map(normalizeFlow), activeFlowId: initialFlows[0].id, fontSizeMode: "medium", savedAt: "" };
+    }
+
+    function normalizeSavedState(parsed) {
+      if (!parsed?.doc || !Array.isArray(parsed?.flows) || parsed.flows.length === 0) {
+        return null;
+      }
+      const parsedFlows = parsed.flows;
+      const mergedFlows = parsedFlows
+        .concat(initialFlows.filter((initialFlow) => !parsedFlows.some((flow) => flow.id === initialFlow.id)));
+      const activeFlowId = parsed.activeFlowId && mergedFlows.some((flow) => flow.id === parsed.activeFlowId)
+        ? parsed.activeFlowId
+        : mergedFlows[0].id;
+      const fontSizeMode = fontSizeModes.includes(parsed.fontSizeMode) ? parsed.fontSizeMode : "medium";
+      const savedAt = parsed.savedAt && !Number.isNaN(new Date(parsed.savedAt).getTime()) ? parsed.savedAt : "";
+      return { doc: { ...initialDoc, ...parsed.doc }, flows: mergedFlows.map(normalizeFlow), activeFlowId, fontSizeMode, savedAt };
+    }
+
+    function savedAtTime(state) {
+      const value = state?.savedAt;
+      if (!value) return 0;
+      const time = new Date(value).getTime();
+      return Number.isNaN(time) ? 0 : time;
+    }
+
+    function pickNewestState(primaryState, secondaryState) {
+      if (!primaryState) return secondaryState || null;
+      if (!secondaryState) return primaryState;
+      return savedAtTime(primaryState) >= savedAtTime(secondaryState) ? primaryState : secondaryState;
+    }
+
+    function loadSavedState() {
       try {
+        if (!loadAutoSaveEnabled()) return getDefaultState();
         const raw = window.localStorage.getItem(STORAGE_KEY);
-        if (!raw) return clone(sample);
-        return normalize(JSON.parse(raw));
+        if (!raw) return getDefaultState();
+        const parsed = JSON.parse(raw);
+        return normalizeSavedState(parsed) || getDefaultState();
       } catch {
-        return clone(sample);
+        return getDefaultState();
       }
     }
 
-    function normalize(input) {
-      const lanes = Array.isArray(input.lanes) && input.lanes.length ? input.lanes.map(String) : clone(sample.lanes);
-      const nodes = Array.isArray(input.nodes) ? input.nodes.map((node, index) => ({
-        id: String(node.id || `S${index + 1}`),
-        lane: lanes.includes(node.lane) ? node.lane : lanes[0],
-        type: ["start", "task", "decision", "end"].includes(node.type) ? node.type : "task",
-        y: Math.max(80, Number(node.y) || 100 + index * 150),
-        height: Math.max(90, Number(node.height) || 112),
-        title: String(node.title || "未命名節點"),
-        desc: String(node.desc || "")
-      })) : clone(sample.nodes);
-      const ids = new Set(nodes.map((node) => node.id));
-      const edges = Array.isArray(input.edges) ? input.edges
-        .filter((edge) => ids.has(String(edge.source)) && ids.has(String(edge.target)))
-        .map((edge, index) => ({
-          id: String(edge.id || `E${index + 1}`),
-          source: String(edge.source),
-          target: String(edge.target),
-          label: String(edge.label || "下一步")
-        })) : clone(sample.edges);
+    function makeSavePayload(doc, flows, activeFlowId, fontSizeMode) {
       return {
-        title: String(input.title || "未命名流程"),
-        summary: String(input.summary || ""),
-        lanes,
-        nodes,
-        edges
+        doc,
+        flows: flows.map(sanitizeFlowForSave),
+        activeFlowId,
+        fontSizeMode,
+        savedAt: new Date().toISOString()
       };
     }
 
-    function save() {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      el("saveStatus").textContent = `Saved ${new Date().toLocaleTimeString("zh-TW", { hour12: false })}`;
+    function formatJsonSavedTime(savedAt) {
+      if (!savedAt) return "JSON：尚未存檔";
+      const date = new Date(savedAt);
+      if (Number.isNaN(date.getTime())) return "JSON：尚未存檔";
+      return `JSON：${date.toLocaleString("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      })}`;
     }
 
-    function laneIndex(name) {
-      return Math.max(0, state.lanes.indexOf(name));
-    }
-
-    function nodePosition(node) {
-      return {
-        left: laneIndex(node.lane) * laneWidth + Math.round((laneWidth - nodeWidth) / 2),
-        top: headerHeight + node.y
-      };
-    }
-
-    function boardHeight() {
-      const maxY = state.nodes.reduce((max, node) => Math.max(max, node.y + node.height + 160), 760);
-      return Math.max(760, maxY);
-    }
-
-    function render() {
-      state = normalize(state);
-      if (!state.nodes.some((node) => node.id === selectedId)) selectedId = state.nodes[0]?.id || "";
-      const width = Math.max(state.lanes.length * laneWidth, 900);
-      const height = boardHeight();
-      board.style.width = `${width}px`;
-      board.style.height = `${height}px`;
-      lanesEl.style.gridTemplateColumns = state.lanes.map(() => `${laneWidth}px`).join(" ");
-      lanesEl.style.width = `${state.lanes.length * laneWidth}px`;
-      lanesEl.style.minHeight = `${height}px`;
-      lanesEl.innerHTML = state.lanes.map((lane) => `<div class="lane"><div class="lane-title">${escapeHtml(lane)}</div></div>`).join("");
-      renderNodes();
-      renderEdges();
-      syncForm();
-    }
-
-    function renderNodes() {
-      [...board.querySelectorAll(".node, .edge-label")].forEach((item) => item.remove());
-      for (const node of state.nodes) {
-        const pos = nodePosition(node);
-        const item = document.createElement("button");
-        item.type = "button";
-        item.className = `node ${node.type}${node.id === selectedId ? " selected" : ""}`;
-        item.dataset.id = node.id;
-        item.style.left = `${pos.left}px`;
-        item.style.top = `${pos.top}px`;
-        item.style.height = `${node.height}px`;
-        item.innerHTML = `
-          <div class="node-head">
-            <span class="node-id">${escapeHtml(node.id)}</span>
-            <span class="node-type">${typeLabel(node.type)}</span>
-          </div>
-          <div class="node-title">${escapeHtml(node.title)}</div>
-          <div class="node-desc">${escapeHtml(node.desc)}</div>
-        `;
-        item.addEventListener("click", () => {
-          selectedId = node.id;
-          render();
-        });
-        item.addEventListener("pointerdown", startDrag);
-        board.appendChild(item);
+    function loadAutoSaveEnabled() {
+      try {
+        return window.localStorage.getItem(AUTOSAVE_ENABLED_KEY) !== "false";
+      } catch {
+        return true;
       }
     }
 
-    function renderEdges() {
-      connectionsEl.setAttribute("width", String(board.offsetWidth));
-      connectionsEl.setAttribute("height", String(board.offsetHeight - headerHeight));
-      connectionsEl.innerHTML = `
-        <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"></path>
-          </marker>
-        </defs>
-      `;
-      for (const edge of state.edges) {
-        const source = state.nodes.find((node) => node.id === edge.source);
-        const target = state.nodes.find((node) => node.id === edge.target);
-        if (!source || !target) continue;
-        const sourcePos = nodePosition(source);
-        const targetPos = nodePosition(target);
-        const x1 = sourcePos.left + nodeWidth;
-        const y1 = source.y + source.height / 2;
-        const x2 = targetPos.left;
-        const y2 = target.y + target.height / 2;
-        const midX = Math.round((x1 + x2) / 2);
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`);
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke", "#475569");
-        path.setAttribute("stroke-width", "2");
-        path.setAttribute("marker-end", "url(#arrow)");
-        connectionsEl.appendChild(path);
-        const label = document.createElement("div");
-        label.className = "edge-label";
-        label.style.left = `${midX}px`;
-        label.style.top = `${headerHeight + Math.round((y1 + y2) / 2)}px`;
-        label.textContent = edge.label;
-        board.appendChild(label);
+    function rememberAutoSaveEnabled(enabled) {
+      try {
+        window.localStorage.setItem(AUTOSAVE_ENABLED_KEY, enabled ? "true" : "false");
+      } catch {
+        // Ignore private browsing or storage quota failures.
       }
     }
 
-    function syncForm() {
-      el("docTitle").value = state.title;
-      el("docSummary").value = state.summary;
-      el("laneText").value = state.lanes.join("\\n");
-      const selected = state.nodes.find((node) => node.id === selectedId);
-      el("nodeList").innerHTML = state.nodes.map((node) => `
-        <button type="button" data-id="${escapeAttr(node.id)}" class="${node.id === selectedId ? "active" : ""}">
-          <strong>${escapeHtml(node.id)}</strong>
-          <span>${escapeHtml(node.title)}</span>
-        </button>
-      `).join("");
-      el("nodeList").querySelectorAll("button").forEach((button) => {
-        button.addEventListener("click", () => {
-          selectedId = button.dataset.id;
-          render();
-        });
+    function saveStatePayload(payload) {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function saveState(doc, flows, activeFlowId, fontSizeMode) {
+      return saveStatePayload(makeSavePayload(doc, flows, activeFlowId, fontSizeMode));
+    }
+
+    function openPersistDb() {
+      return new Promise((resolve, reject) => {
+        if (!("indexedDB" in window)) {
+          reject(new Error("IndexedDB unavailable"));
+          return;
+        }
+        const request = window.indexedDB.open(PERSIST_DB_NAME, PERSIST_DB_VERSION);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(PERSIST_STORE_NAME)) {
+            db.createObjectStore(PERSIST_STORE_NAME);
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("IndexedDB open failed"));
       });
-      fillSelect(el("nodeLane"), state.lanes, selected?.lane);
-      fillSelect(el("edgeSource"), state.nodes.map((node) => node.id), selectedId);
-      fillSelect(el("edgeTarget"), state.nodes.map((node) => node.id), state.nodes.find((node) => node.id !== selectedId)?.id || selectedId);
-      el("nodeId").value = selected?.id || "";
-      el("nodeType").value = selected?.type || "task";
-      el("nodeTitle").value = selected?.title || "";
-      el("nodeDesc").value = selected?.desc || "";
-      el("nodeY").value = selected?.y || 100;
-      el("nodeHeight").value = selected?.height || 112;
     }
 
-    function fillSelect(select, values, selected) {
-      select.innerHTML = values.map((value) => `<option value="${escapeAttr(value)}">${escapeHtml(value)}</option>`).join("");
-      select.value = selected || values[0] || "";
+    async function readPersistentHandle() {
+      const db = await openPersistDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(PERSIST_STORE_NAME, "readonly");
+        const store = tx.objectStore(PERSIST_STORE_NAME);
+        const request = store.get(PERSIST_HANDLE_KEY);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error || new Error("Read file handle failed"));
+        tx.oncomplete = () => db.close();
+        tx.onerror = () => {
+          db.close();
+          reject(tx.error || new Error("Read file handle transaction failed"));
+        };
+      });
     }
 
-    function updateSelected(patch) {
-      state.nodes = state.nodes.map((node) => node.id === selectedId ? { ...node, ...patch } : node);
-      save();
-      render();
+    async function storePersistentHandle(handle) {
+      const db = await openPersistDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(PERSIST_STORE_NAME, "readwrite");
+        const store = tx.objectStore(PERSIST_STORE_NAME);
+        store.put(handle, PERSIST_HANDLE_KEY);
+        tx.oncomplete = () => {
+          db.close();
+          resolve(true);
+        };
+        tx.onerror = () => {
+          db.close();
+          reject(tx.error || new Error("Store file handle failed"));
+        };
+      });
     }
 
-    function startDrag(event) {
-      const id = event.currentTarget.dataset.id;
-      const node = state.nodes.find((item) => item.id === id);
-      if (!node) return;
-      selectedId = id;
-      const pos = nodePosition(node);
-      dragState = {
+    async function clearPersistentHandle() {
+      const db = await openPersistDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(PERSIST_STORE_NAME, "readwrite");
+        const store = tx.objectStore(PERSIST_STORE_NAME);
+        store.delete(PERSIST_HANDLE_KEY);
+        tx.oncomplete = () => {
+          db.close();
+          resolve(true);
+        };
+        tx.onerror = () => {
+          db.close();
+          reject(tx.error || new Error("Clear file handle failed"));
+        };
+      });
+    }
+
+    async function hasFileWritePermission(handle, request = false) {
+      if (handle?.kind === "server") return true;
+      if (!handle?.queryPermission) return Boolean(handle?.createWritable);
+      const options = { mode: "readwrite" };
+      if ((await handle.queryPermission(options)) === "granted") return true;
+      return request && handle.requestPermission && (await handle.requestPermission(options)) === "granted";
+    }
+
+    function supportsAutoPersistentFile() {
+      return true;
+    }
+
+    async function getServerPersistentTarget() {
+      return null;
+    }
+
+    async function setServerAutoSavePaused(paused) {
+      return Boolean(paused);
+    }
+
+    async function getAutoPersistentHandle() {
+      const serverTarget = await getServerPersistentTarget().catch(() => null);
+      if (serverTarget) return serverTarget;
+      if (!navigator.storage?.getDirectory) {
+        throw new Error("Auto persistent file is not supported");
+      }
+      await navigator.storage?.persist?.().catch(() => false);
+      const root = await navigator.storage.getDirectory();
+      return root.getFileHandle(AUTO_PERSIST_FILE_NAME, { create: true });
+    }
+
+    async function writePersistentState(handle, payload) {
+      if (handle?.kind === "server") {
+        const response = await fetch(handle.api, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (response.status === 423) return { ok: false, paused: true };
+        if (!response.ok) throw new Error("Autosave server write failed");
+        return { ok: true, paused: false };
+      }
+      const writable = await handle.createWritable();
+      await writable.write(JSON.stringify(payload, null, 2));
+      await writable.close();
+      return { ok: true, paused: false };
+    }
+
+    async function readPersistentState(handle) {
+      if (handle?.kind === "server") {
+        const response = await fetch(handle.api, { cache: "no-store" });
+        if (response.status === 204 || response.status === 404) return null;
+        if (!response.ok) throw new Error("Autosave server read failed");
+        const text = await response.text();
+        if (!text.trim()) return null;
+        return normalizeSavedState(JSON.parse(text));
+      }
+      const file = await handle.getFile();
+      const text = await file.text();
+      if (!text.trim()) return null;
+      const parsed = JSON.parse(text);
+      return normalizeSavedState(parsed);
+    }
+
+    function node(id, lane, kind, x, y, title, desc, constraint = "", size = {}) {
+      const width = size.width || defaultNodeWidth;
+      return {
         id,
-        startX: event.clientX,
-        startY: event.clientY,
-        left: pos.left,
-        y: node.y
-      };
-      event.currentTarget.setPointerCapture(event.pointerId);
-      window.addEventListener("pointermove", moveDrag);
-      window.addEventListener("pointerup", stopDrag, { once: true });
-    }
-
-    function moveDrag(event) {
-      if (!dragState) return;
-      const dx = event.clientX - dragState.startX;
-      const dy = event.clientY - dragState.startY;
-      const lane = state.lanes[Math.max(0, Math.min(state.lanes.length - 1, Math.round((dragState.left + dx) / laneWidth)))] || state.lanes[0];
-      const y = Math.max(80, Math.round((dragState.y + dy) / 10) * 10);
-      state.nodes = state.nodes.map((node) => node.id === dragState.id ? { ...node, lane, y } : node);
-      render();
-    }
-
-    function stopDrag() {
-      if (!dragState) return;
-      dragState = null;
-      window.removeEventListener("pointermove", moveDrag);
-      save();
-      render();
-    }
-
-    function addNode() {
-      const nextNumber = state.nodes.length + 1;
-      const node = {
-        id: uniqueNodeId(`S${nextNumber}`),
-        lane: state.lanes[0],
-        type: "task",
-        y: 120 + state.nodes.length * 40,
-        height: 112,
-        title: "新增節點",
-        desc: "填寫此節點的流程說明。"
-      };
-      state.nodes.push(node);
-      selectedId = node.id;
-      save();
-      render();
-    }
-
-    function uniqueNodeId(base) {
-      const existing = new Set(state.nodes.map((node) => node.id));
-      if (!existing.has(base)) return base;
-      let index = 2;
-      while (existing.has(`${base}-${index}`)) index += 1;
-      return `${base}-${index}`;
-    }
-
-    function addEdge() {
-      const source = el("edgeSource").value;
-      const target = el("edgeTarget").value;
-      if (!source || !target || source === target) {
-        el("saveStatus").textContent = "請選擇不同的起點與終點";
-        return;
-      }
-      state.edges.push({
-        id: `E${Date.now()}`,
-        source,
-        target,
-        label: el("edgeLabel").value || "下一步"
-      });
-      save();
-      render();
-    }
-
-    function deleteNode() {
-      if (!selectedId) return;
-      state.nodes = state.nodes.filter((node) => node.id !== selectedId);
-      state.edges = state.edges.filter((edge) => edge.source !== selectedId && edge.target !== selectedId);
-      selectedId = state.nodes[0]?.id || "";
-      save();
-      render();
-    }
-
-    function exportJson() {
-      download("swimlane-flow.sample.json", JSON.stringify(state, null, 2), "application/json");
-    }
-
-    function importJson(file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          state = normalize(JSON.parse(String(reader.result || "{}")));
-          selectedId = state.nodes[0]?.id || "";
-          save();
-          render();
-        } catch {
-          el("saveStatus").textContent = "JSON 格式錯誤";
+        type: "baNode",
+        position: { x, y },
+        origin: [0, 0],
+        data: {
+          lane: normalizeLane(lane),
+          kind,
+          title,
+          desc,
+          constraint,
+          width,
+          height: size.height || estimateNodeHeight({ title, desc, constraint, width })
         }
       };
-      reader.readAsText(file);
+    }
+
+    function noteNode(id, y, title, desc) {
+      return {
+        id,
+        type: "baNode",
+        position: { x: 0, y },
+        origin: [0, 0],
+        data: { lane: noteLaneName, kind: "note", title, desc, constraint: "", width: noteNodeWidth, height: estimateNoteHeight({ title, desc }) }
+      };
+    }
+
+    function normalizeLane(value) {
+      if (value === noteLaneName) return noteLaneName;
+      const mapped = legacyLaneMap[value] || value;
+      const normalized = String(mapped || "").trim();
+      return normalized || "申請人";
+    }
+
+    function getLaneGroupName(lane) {
+      if (lane === noteLaneName) return "備註";
+      return laneGroupByName[lane] || "自訂";
+    }
+
+    function getLaneGroupMap(customLaneGroups = {}) {
+      return {
+        ...laneGroupByName,
+        ...(customLaneGroups || {})
+      };
+    }
+
+    function getLaneOptionLabel(lane, customLaneGroups = {}) {
+      return `${getLaneGroupMap(customLaneGroups)[lane] || getLaneGroupName(lane)} / ${lane}`;
+    }
+
+    function getLaneOptions(nodes = [], selectedLane = "", hiddenLanes = []) {
+      const hidden = new Set(hiddenLanes.map(normalizeLane));
+      const options = laneOptions.filter((lane) => !hidden.has(lane));
+      [selectedLane]
+        .concat(nodes.filter((item) => !isNoteNode(item)).map((item) => normalizeLane(item.data?.lane)))
+        .filter((lane) => lane && lane !== noteLaneName)
+        .forEach((lane) => {
+          if (!hidden.has(lane) && !options.includes(lane)) options.push(lane);
+        });
+      return options;
+    }
+
+    function isNoteNode(node) {
+      return normalizeLane(node?.data?.lane) === noteLaneName || node?.data?.kind === "note";
+    }
+
+    function normalizeFlow(flow) {
+      const nodes = Array.isArray(flow.nodes) ? flow.nodes.map(normalizeSavedNode) : [];
+      const nodesWithNotes = nodes.some((item) => isNoteNode(item))
+        ? nodes
+        : nodes.concat(noteNode(`RM-${String(flow.id || "flow").replace(/[^a-zA-Z0-9]/g, "")}`, 88, "流程備註", "可在此補充本流程的例外、待確認或閱讀提示。"));
+      return {
+        ...flow,
+        version: flowVersions.includes(flow.version) ? flow.version : "非正式",
+        doc: normalizeFlowDoc(flow),
+        nodes: clampFlowNodes(nodesWithNotes),
+        edges: Array.isArray(flow.edges) ? normalizeFlowEdges(flow.edges.map(normalizeSavedEdge)) : []
+      };
+    }
+
+    function handlePointFromId(handleId) {
+      const value = String(handleId || "");
+      if (legacyHandlePointMap[value]) return legacyHandlePointMap[value];
+      if (value.startsWith("source-")) return value.slice("source-".length);
+      if (value.startsWith("target-")) return value.slice("target-".length);
+      if (value.startsWith("handle-")) return value.slice("handle-".length);
+      return connectionPointIds.includes(value) ? value : "";
+    }
+
+    function normalizeHandleId(handleId, fallback = "right-2", role = "source") {
+      if (connectionPointIds.includes(handleId)) return handleId;
+      const pointId = handlePointFromId(handleId);
+      if (connectionPointIds.includes(pointId)) return pointId;
+      return fallback;
+    }
+
+    function normalizeSavedEdge(savedEdge) {
+      const { selected, ...persistedEdge } = savedEdge || {};
+      const edgeType = savedEdge?.type === "straight" ? "straight" : "cleanStep";
+      return {
+        ...persistedEdge,
+        sourceHandle: normalizeHandleId(savedEdge?.sourceHandle, "right-2", "source"),
+        targetHandle: normalizeHandleId(savedEdge?.targetHandle, "left-2", "target"),
+        type: edgeType,
+        pathOptions: edgeType === "cleanStep" ? {} : savedEdge?.pathOptions
+      };
+    }
+
+    function normalizeFlowEdges(edges) {
+      return assignUniqueConnectionHandles(edges.map((item) => ({
+          ...item,
+          sourceHandle: normalizeHandleId(item.sourceHandle, "right-2", "source"),
+          targetHandle: normalizeHandleId(item.targetHandle, "left-2", "target")
+      })));
+    }
+
+    function normalizeSavedNode(savedNode) {
+      const { selected, dragging, resizing, ...persistedNode } = savedNode || {};
+      const data = savedNode?.data || {};
+      const width = data.kind === "note" || data.lane === noteLaneName
+        ? noteNodeWidth
+        : normalizeSavedNodeWidth(data.width);
+      const baseData = {
+        lane: normalizeLane(data.lane || data.actor),
+        kind: data.kind === "note" || data.lane === noteLaneName ? "note" : data.kind || "task",
+        title: data.title || "未命名節點",
+        desc: data.desc || "",
+        constraint: data.constraint || data.rule || "",
+        width
+      };
+      return {
+        ...persistedNode,
+        type: "baNode",
+        origin: [0, 0],
+        position: savedNode?.position || { x: lanePadding, y: 88 },
+        data: {
+          ...baseData,
+          height: baseData.kind === "note"
+            ? clamp(Number(data.height) || defaultNoteHeight, minNoteHeight, canvasHeight - 120)
+            : normalizeSavedNodeHeight(data.height)
+        }
+      };
+    }
+
+    function edge(source, target, label, options = {}) {
+      return {
+        id: `e-${source}-${target}-${Math.random().toString(36).slice(2, 7)}`,
+        source,
+        target,
+        sourceHandle: normalizeHandleId(options.sourceHandle, "right-2", "source"),
+        targetHandle: normalizeHandleId(options.targetHandle, "left-2", "target"),
+        label,
+        type: options.type || "cleanStep",
+        animated: false,
+        markerEnd: { type: "arrowclosed" },
+        style: { strokeWidth: 2.6, stroke: "#1d4ed8" },
+        labelStyle: { fontSize: 18, fontWeight: 900, fill: "#0f172a" },
+        interactionWidth: 32,
+        pathOptions: options.type === "straight" ? undefined : {},
+        labelBgPadding: [18, 10],
+        labelBgBorderRadius: 8,
+        labelBgStyle: { fill: "#fff", stroke: "#cbd5e1" }
+      };
+    }
+
+    function isSourceHandleUsed(edges, nodeId, handleId, ignoreEdgeId = "") {
+      if (!nodeId || !handleId) return false;
+      return edges.some((item) => item.id !== ignoreEdgeId && item.source === nodeId && normalizeHandleId(item.sourceHandle, "right-2", "source") === handleId);
+    }
+
+    function isTargetHandleUsed(edges, nodeId, handleId, ignoreEdgeId = "") {
+      if (!nodeId || !handleId) return false;
+      return edges.some((item) => item.id !== ignoreEdgeId && item.target === nodeId && normalizeHandleId(item.targetHandle, "left-2", "target") === handleId);
+    }
+
+    function isHandleUsedOnNode(edges, nodeId, handleId, ignoreEdgeId = "") {
+      if (!nodeId || !handleId) return false;
+      return edges.some((item) => {
+        if (item.id === ignoreEdgeId) return false;
+        const sourceHandle = normalizeHandleId(item.sourceHandle, "right-2", "source");
+        const targetHandle = normalizeHandleId(item.targetHandle, "left-2", "target");
+        return (item.source === nodeId && sourceHandle === handleId) ||
+          (item.target === nodeId && targetHandle === handleId);
+      });
+    }
+
+    function canUseConnection(connection, edges, ignoreEdgeId = "") {
+      return Boolean(resolveConnectionHandles(connection, edges, ignoreEdgeId));
+    }
+
+    function firstFreeHandle(edges, nodeId, preferred = [], role = "source", ignoreEdgeId = "") {
+      const options = role === "target" ? targetHandleOptions : sourceHandleOptions;
+      const candidates = [...new Set(preferred.concat(options))];
+      return candidates.find((handleId) => !isHandleUsedOnNode(edges, nodeId, handleId, ignoreEdgeId)) || "";
+    }
+
+    function resolveConnectionHandles(connection, edges, ignoreEdgeId = "") {
+      if (!connection?.source || !connection?.target || connection.source === connection.target) return null;
+      if (!connection.sourceHandle || !connection.targetHandle) return null;
+      const preferredSource = normalizeHandleId(connection.sourceHandle, "right-2", "source");
+      const preferredTarget = normalizeHandleId(connection.targetHandle, "left-2", "target");
+      const sourceHandle = isHandleUsedOnNode(edges, connection.source, preferredSource, ignoreEdgeId)
+        ? firstFreeHandle(edges, connection.source, [preferredSource, "right-2", "bottom-2", "left-2", "top-2"], "source", ignoreEdgeId)
+        : preferredSource;
+      const targetHandle = isHandleUsedOnNode(edges, connection.target, preferredTarget, ignoreEdgeId)
+        ? firstFreeHandle(edges, connection.target, [preferredTarget, "left-2", "top-2", "right-2", "bottom-2"], "target", ignoreEdgeId)
+        : preferredTarget;
+      if (!sourceHandle || !targetHandle) return null;
+      return { ...connection, sourceHandle, targetHandle };
+    }
+
+    function assignUniqueConnectionHandles(edges) {
+      const normalized = [];
+      edges.forEach((item) => {
+        const preferredSource = normalizeHandleId(item.sourceHandle, "right-2", "source");
+        const preferredTarget = normalizeHandleId(item.targetHandle, "left-2", "target");
+        const sourceHandle = isHandleUsedOnNode(normalized, item.source, preferredSource)
+          ? firstFreeHandle(normalized, item.source, [preferredSource, "right-2", "bottom-2", "left-2", "top-2"], "source")
+          : preferredSource;
+        const targetHandle = isHandleUsedOnNode(normalized, item.target, preferredTarget)
+          ? firstFreeHandle(normalized, item.target, [preferredTarget, "left-2", "top-2", "right-2", "bottom-2"], "target")
+          : preferredTarget;
+        normalized.push({ ...item, sourceHandle: sourceHandle || preferredSource, targetHandle: targetHandle || preferredTarget });
+      });
+      return normalized;
+    }
+
+    function getPointerClientPosition(event) {
+      const touch = event?.changedTouches?.[0] || event?.touches?.[0];
+      const clientX = Number.isFinite(event?.clientX) ? event.clientX : touch?.clientX;
+      const clientY = Number.isFinite(event?.clientY) ? event.clientY : touch?.clientY;
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+      return { clientX, clientY };
+    }
+
+    function nearestNodeHandleAtPoint(nodeId, clientX, clientY, radius = 48) {
+      if (!nodeId) return null;
+      const nodeSelector = `.react-flow__node[data-id="${CSS.escape(nodeId)}"]`;
+      const handles = [...document.querySelectorAll(`${nodeSelector} .react-flow__handle.handle-dual`)];
+      let best = null;
+      handles.forEach((handle) => {
+        const rect = handle.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const distance = Math.hypot(cx - clientX, cy - clientY);
+        if (distance <= radius && (!best || distance < best.distance)) {
+          best = {
+            handleId: normalizeHandleId(handle.getAttribute("data-handleid") || handle.id, "right-2"),
+            distance
+          };
+        }
+      });
+      return best;
+    }
+
+    function getWarnings(node, edges) {
+      if (isNoteNode(node)) return [];
+      const incoming = edges.some((item) => item.target === node.id);
+      const outgoing = edges.some((item) => item.source === node.id);
+      const warnings = [];
+      if (node.data.kind !== "start" && !incoming) warnings.push("缺前");
+      if (node.data.kind !== "end" && !outgoing) warnings.push("缺後");
+      return warnings;
+    }
+
+    function getVisibleLaneGroups(nodes, hiddenLanes = [], customLaneGroups = {}) {
+      const hidden = new Set(hiddenLanes.map(normalizeLane));
+      const groupMap = getLaneGroupMap(customLaneGroups);
+      const used = new Set(nodes.filter((item) => !isNoteNode(item)).map((item) => normalizeLane(item.data?.lane)).filter(Boolean));
+      if (used.size === 0) used.add("申請人");
+      const knownGroups = laneGroups
+        .map((group) => ({ ...group, lanes: group.lanes.filter((lane) => used.has(lane) && !hidden.has(lane)) }))
+        .filter((group) => group.lanes.length > 0);
+      const customByGroup = [...used]
+        .filter((lane) => lane !== noteLaneName && !hidden.has(lane) && !laneOptions.includes(lane))
+        .reduce((groups, lane) => {
+          const groupName = groupMap[lane] || "自訂";
+          if (!groups[groupName]) groups[groupName] = [];
+          groups[groupName].push(lane);
+          return groups;
+        }, {});
+      return knownGroups.concat(Object.entries(customByGroup).map(([group, lanes]) => ({ group, lanes })));
+    }
+
+    function getVisibleLanes(nodes, hiddenLanes = [], customLaneGroups = {}) {
+      return getVisibleLaneGroups(nodes, hiddenLanes, customLaneGroups).flatMap((group) => group.lanes);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function normalizeSavedNodeWidth(value) {
+      const width = Number(value);
+      if (!width || Math.abs(width - legacyDefaultNodeWidth) <= 1) return defaultNodeWidth;
+      return clamp(width, minNodeWidth, maxNodeWidth);
+    }
+
+    function estimateTextLines(text, charsPerLine) {
+      const value = String(text || "").trim();
+      if (!value) return 0;
+      return value.split(/\n+/).reduce((total, line) => {
+        const normalizedLength = Array.from(line.trim()).reduce((sum, char) => {
+          return sum + (/[\x00-\x7F]/.test(char) ? 0.55 : 1);
+        }, 0);
+        return total + Math.max(1, Math.ceil(normalizedLength / charsPerLine));
+      }, 0);
+    }
+
+    function estimateNodeHeight(data = {}) {
+      const width = clamp(Number(data.width) || defaultNodeWidth, minNodeWidth, maxNodeWidth);
+      const charsPerLine = Math.max(8, Math.floor((width - 24) / 17));
+      const titleLines = estimateTextLines(data.title, charsPerLine);
+      const descLines = estimateTextLines(data.desc, charsPerLine);
+      const constraintLines = estimateTextLines(data.constraint, Math.max(8, charsPerLine - 2));
+      const metaHeight = 30;
+      const titleHeight = Math.max(28, titleLines * 27);
+      const descHeight = descLines * 24;
+      const detailHeight = constraintLines ? 14 + constraintLines * 23 : 0;
+      const paddingAndGap = 72;
+      const contentHeight = Math.ceil(metaHeight + titleHeight + descHeight + detailHeight + paddingAndGap);
+      return clamp(contentHeight, minNodeHeight, maxNodeHeight);
+    }
+
+    function estimateNoteHeight(data = {}) {
+      const charsPerLine = Math.max(8, Math.floor((noteNodeWidth - 24) / 16));
+      const titleLines = estimateTextLines(data.title, charsPerLine);
+      const descLines = estimateTextLines(data.desc, charsPerLine);
+      const metaHeight = 30;
+      const titleHeight = Math.max(26, titleLines * 25);
+      const descHeight = descLines * 23;
+      const paddingAndGap = 54;
+      return clamp(Math.ceil(metaHeight + titleHeight + descHeight + paddingAndGap), minNoteHeight, canvasHeight - 120);
+    }
+
+    function normalizeSavedNodeHeight(value) {
+      const height = Number(value);
+      if (!height || Math.abs(height - legacyDefaultNodeHeight) <= 1) return defaultNodeHeight;
+      return clamp(height, minNodeHeight, maxNodeHeight);
+    }
+
+    function nodeWidthOf(node) {
+      if (isNoteNode(node)) return noteNodeWidth;
+      return clamp(Number(node.data?.width) || defaultNodeWidth, minNodeWidth, maxNodeWidth);
+    }
+
+    function nodeHeightOf(node) {
+      if (isNoteNode(node)) return clamp(Number(node.data?.height) || defaultNoteHeight, minNoteHeight, canvasHeight - 120);
+      return clamp(Number(node.data?.height) || defaultNodeHeight, minNodeHeight, maxNodeHeight);
+    }
+
+    function laneIndexForNode(node, visibleLanes) {
+      const lane = normalizeLane(node.data?.lane);
+      return Math.max(0, visibleLanes.indexOf(lane));
+    }
+
+    function centeredXForNode(node, visibleLanes) {
+      if (isNoteNode(node)) return visibleLanes.length * laneWidth + Math.round((noteLaneWidth - noteNodeWidth) / 2);
+      const index = laneIndexForNode(node, visibleLanes);
+      return index * laneWidth + Math.round((laneWidth - nodeWidthOf(node)) / 2);
+    }
+
+    function clampNodeToLane(node, visibleLanes) {
+      const height = nodeHeightOf(node);
+      if (isNoteNode(node)) {
+        return {
+          ...node,
+          position: {
+            x: centeredXForNode(node, visibleLanes),
+            y: clamp(node.position?.y || 72, 72, canvasHeight - height - 80)
+          },
+          data: {
+            ...node.data,
+            lane: noteLaneName,
+            kind: "note",
+            width: noteNodeWidth,
+            height
+          }
+        };
+      }
+      return {
+        ...node,
+        position: {
+          x: centeredXForNode(node, visibleLanes),
+          y: clamp(node.position?.y || 72, 72, canvasHeight - height - 80)
+        },
+        data: {
+          ...node.data,
+          width: nodeWidthOf(node),
+          height
+        }
+      };
+    }
+
+    function clampFlowNodes(nodes) {
+      const visibleLanes = getVisibleLanes(nodes);
+      const prepared = nodes.map((item) => clampNodeToLane(item, visibleLanes));
+      const byId = new Map(prepared.map((item) => [item.id, item]));
+      visibleLanes.forEach((lane) => {
+        let cursor = 72;
+        prepared
+          .filter((item) => normalizeLane(item.data?.lane) === lane)
+          .sort((a, b) => (a.position?.y || 0) - (b.position?.y || 0))
+          .forEach((item) => {
+            const height = nodeHeightOf(item);
+            const y = Math.max(item.position.y, cursor);
+            byId.set(item.id, {
+              ...item,
+              position: { ...item.position, y },
+              data: { ...item.data, height }
+            });
+            cursor = y + height + nodeGap;
+          });
+      });
+      return nodes.map((item) => byId.get(item.id) || item);
+    }
+
+    function stripTransientNodeState(node) {
+      const { selected, dragging, resizing, ...persistedNode } = node;
+      return persistedNode;
+    }
+
+    function stripTransientEdgeState(edge) {
+      const { selected, ...persistedEdge } = edge;
+      return persistedEdge;
+    }
+
+    function prepareNodesForSave(nodes) {
+      return clampFlowNodes(nodes).map(stripTransientNodeState);
+    }
+
+    function prepareEdgesForSave(edges) {
+      return assignUniqueConnectionHandles(edges).map(stripTransientEdgeState);
+    }
+
+    function sanitizeFlowForSave(flow) {
+      return {
+        ...flow,
+        doc: normalizeFlowDoc(flow),
+        nodes: prepareNodesForSave(flow.nodes || []),
+        edges: prepareEdgesForSave(flow.edges || [])
+      };
+    }
+
+    function sameJsonValue(a, b) {
+      return JSON.stringify(a) === JSON.stringify(b);
+    }
+
+    function makeNodeData(node, edges) {
+      return { ...node.data, warnings: getWarnings(node, edges) };
+    }
+
+    function BaNode({ id, data, selected }) {
+      const warnings = data.warnings || [];
+      const focusClass = data.focus === "edge" ? "edge-focus" : data.focus === "related" ? "related-focus" : "";
+      const isNote = data.kind === "note";
+      return h("div", { style: { width: data.width, height: data.height } },
+        h(NodeResizer, {
+          isVisible: selected && !data.readonly,
+          minWidth: isNote ? noteNodeWidth : minNodeWidth,
+          minHeight: isNote ? minNoteHeight : minNodeHeight,
+          maxWidth: isNote ? noteNodeWidth : maxNodeWidth,
+          maxHeight: isNote ? canvasHeight - 120 : maxNodeHeight,
+          keepAspectRatio: false,
+          onResizeStart: () => data.onResizeStart?.(id),
+          onResize: (_event, params) => data.onResize?.(id, params),
+          onResizeEnd: (_event, params) => data.onResizeEnd?.(id, params)
+        }),
+        h("div", { className: `ba-node ${data.kind} ${selected ? "selected" : ""} ${focusClass} ${warnings.length ? "unlinked" : ""}` },
+          isNote ? null : (data.kind === "decision" ? decisionConnectionHandleDefinitions(data.width, data.height) : connectionHandleDefinitions).map((handle) =>
+            h(Handle, {
+              key: handle.pointId,
+              id: handle.pointId,
+              "data-handleid": handle.pointId,
+              className: "handle-dual",
+              position: handle.position,
+              style: handle.style
+            })
+          ),
+          h("div", { className: "node-meta" },
+            h("span", null,
+              h("span", { className: `node-symbol ${data.kind}` }, kindSymbol[data.kind] || "作"),
+              id, " · ", kindLabel[data.kind],
+              warnings.length ? h("span", { className: "node-warning" }, warnings.join("/")) : null
+            ),
+            h("span", null, isNote ? "右側備註" : data.lane)
+          ),
+          h("h3", { className: "node-title" }, data.title),
+          h("p", { className: "node-desc" }, data.desc),
+          data.constraint ? h("div", { className: "node-detail" }, "限制：", data.constraint) : null
+        )
+      );
+    }
+
+    function LaneNode({ data }) {
+      return h("div", {
+        className: "lane-node",
+        style: { width: data.width, height: data.height, "--lane-bg": data.background }
+      },
+        h("div", { className: "lane-title" },
+          h("small", null, data.group),
+          h("strong", null, data.lane)
+        )
+      );
+    }
+
+    function handleFaceFromPosition(position) {
+      if (position === Position.Top) return "top";
+      if (position === Position.Right) return "right";
+      if (position === Position.Bottom) return "bottom";
+      if (position === Position.Left) return "left";
+      return "";
+    }
+
+    function handleFaceFromId(handleId, position) {
+      const face = String(handleId || "").split("-")[0];
+      return ["top", "right", "bottom", "left"].includes(face) ? face : handleFaceFromPosition(position);
+    }
+
+    function isHorizontalFace(face) {
+      return face === "left" || face === "right";
+    }
+
+    function facePointsToward(face, from, to) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      if (face === "right") return dx > 0 && Math.abs(dy) < 1;
+      if (face === "left") return dx < 0 && Math.abs(dy) < 1;
+      if (face === "bottom") return dy > 0 && Math.abs(dx) < 1;
+      if (face === "top") return dy < 0 && Math.abs(dx) < 1;
+      return false;
+    }
+
+    function sameFaceRoute(source, target, face) {
+      const gap = 64;
+      if (face === "right") {
+        const x = Math.max(source.x, target.x) + gap;
+        return [source, { x, y: source.y }, { x, y: target.y }, target];
+      }
+      if (face === "left") {
+        const x = Math.min(source.x, target.x) - gap;
+        return [source, { x, y: source.y }, { x, y: target.y }, target];
+      }
+      if (face === "bottom") {
+        const y = Math.max(source.y, target.y) + gap;
+        return [source, { x: source.x, y }, { x: target.x, y }, target];
+      }
+      const y = Math.min(source.y, target.y) - gap;
+      return [source, { x: source.x, y }, { x: target.x, y }, target];
+    }
+
+    function CleanStepEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, sourceHandleId, targetHandleId, markerEnd, style, label, labelStyle }) {
+      const sameX = Math.abs(sourceX - targetX) < 1;
+      const sameY = Math.abs(sourceY - targetY) < 1;
+      const sourceFace = handleFaceFromId(sourceHandleId, sourcePosition);
+      const targetFace = handleFaceFromId(targetHandleId, targetPosition);
+      const horizontalSource = isHorizontalFace(sourceFace);
+      const horizontalTarget = isHorizontalFace(targetFace);
+      const source = { x: sourceX, y: sourceY };
+      const target = { x: targetX, y: targetY };
+      let points;
+
+      if ((sameX || sameY) && facePointsToward(sourceFace, source, target) && facePointsToward(targetFace, target, source)) {
+        points = [source, target];
+      } else if (sourceFace && sourceFace === targetFace) {
+        points = sameFaceRoute(source, target, sourceFace);
+      } else if (horizontalSource && !horizontalTarget) {
+        points = [source, { x: targetX, y: sourceY }, target];
+      } else if (!horizontalSource && horizontalTarget) {
+        points = [source, { x: sourceX, y: targetY }, target];
+      } else if (horizontalSource && horizontalTarget) {
+        const midX = (sourceX + targetX) / 2;
+        points = [source, { x: midX, y: sourceY }, { x: midX, y: targetY }, target];
+      } else {
+        const midY = (sourceY + targetY) / 2;
+        points = [source, { x: sourceX, y: midY }, { x: targetX, y: midY }, target];
+      }
+
+      points = points.reduce((items, point) => {
+        const prev = items[items.length - 1];
+        if (prev && Math.abs(prev.x - point.x) < 1 && Math.abs(prev.y - point.y) < 1) return items;
+        if (items.length >= 2) {
+          const beforePrev = items[items.length - 2];
+          const sameVertical = Math.abs(beforePrev.x - prev.x) < 1 && Math.abs(prev.x - point.x) < 1;
+          const sameHorizontal = Math.abs(beforePrev.y - prev.y) < 1 && Math.abs(prev.y - point.y) < 1;
+          const sameVerticalDirection = Math.sign(prev.y - beforePrev.y) === Math.sign(point.y - prev.y);
+          const sameHorizontalDirection = Math.sign(prev.x - beforePrev.x) === Math.sign(point.x - prev.x);
+          if ((sameVertical && sameVerticalDirection) || (sameHorizontal && sameHorizontalDirection)) items.pop();
+        }
+        items.push(point);
+        return items;
+      }, []);
+
+      const path = points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x},${point.y}`).join(" ");
+      const totalLength = points.slice(1).reduce((sum, point, index) => sum + Math.hypot(point.x - points[index].x, point.y - points[index].y), 0);
+      let remaining = totalLength / 2;
+      let labelX = (sourceX + targetX) / 2;
+      let labelY = (sourceY + targetY) / 2;
+      for (let index = 1; index < points.length; index += 1) {
+        const from = points[index - 1];
+        const to = points[index];
+        const segmentLength = Math.hypot(to.x - from.x, to.y - from.y);
+        if (remaining <= segmentLength || index === points.length - 1) {
+          const ratio = segmentLength ? remaining / segmentLength : 0;
+          labelX = from.x + (to.x - from.x) * ratio;
+          labelY = from.y + (to.y - from.y) * ratio;
+          break;
+        }
+        remaining -= segmentLength;
+      }
+      return h("g", null,
+        h("path", {
+          d: path,
+          fill: "none",
+          stroke: "transparent",
+          strokeWidth: 32,
+          className: "react-flow__edge-interaction"
+        }),
+        h("path", {
+          id,
+          d: path,
+          fill: "none",
+          markerEnd,
+          className: "react-flow__edge-path",
+          style
+        }),
+        label ? h("text", {
+          x: labelX,
+          y: labelY - 8,
+          textAnchor: "middle",
+          dominantBaseline: "central",
+          style: {
+            paintOrder: "stroke",
+            stroke: "#fff",
+            strokeWidth: 8,
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+            ...(labelStyle || {})
+          }
+        }, label) : null
+      );
+    }
+
+    function renderFlowBrief(doc, activeFlow, visibleLaneGroups) {
+      const lanesText = visibleLaneGroups
+        .map((group) => `${group.group}：${group.lanes.join("、")}`)
+        .join("；");
+      const startNodes = activeFlow.nodes.filter((item) => item.data.kind === "start").map((item) => item.id).join("、") || "未設定";
+      const endNodes = activeFlow.nodes.filter((item) => item.data.kind === "end").map((item) => item.id).join("、") || "未設定";
+      const version = flowVersions.includes(activeFlow.version) ? activeFlow.version : "非正式";
+      return h("details", { className: "flow-brief" },
+        h("summary", null,
+          h("div", null,
+            h("strong", null, "泳道圖設定與描述")
+          ),
+          h("span", { className: "tag info" }, "展開")
+        ),
+        h("div", { className: "flow-brief-body" },
+          h("div", { className: "brief-item" }, h("b", null, "流程圖"), h("p", null, activeFlow.name)),
+          h("div", { className: "brief-item" }, h("b", null, "泳道圖版本"), h("p", null, version)),
+          h("div", { className: "brief-item" }, h("b", null, "起點 / 終點"), h("p", null, `${startNodes} / ${endNodes}`)),
+          h("div", { className: "brief-item" }, h("b", null, "本圖使用泳道"), h("p", null, lanesText || "未設定")),
+          h("div", { className: "brief-item" }, h("b", null, "流程背景"), h("p", null, doc.background || "待補")),
+          h("div", { className: "brief-item" }, h("b", null, "本次包含"), h("p", null, doc.includeScope || "待補")),
+          h("div", { className: "brief-item" }, h("b", null, "本次不包含"), h("p", null, doc.excludeScope || "待補"))
+        )
+      );
+    }
+
+    function App() {
+      const [initialState] = useState(loadSavedState);
+      const [doc, setDoc] = useState(initialState.doc);
+      const [flows, setFlows] = useState(initialState.flows);
+      const [activeFlowId, setActiveFlowId] = useState(initialState.activeFlowId);
+      const [collapsed, setCollapsed] = useState(false);
+      const [selectedNodeId, setSelectedNodeId] = useState(initialState.flows.find((flow) => flow.id === initialState.activeFlowId)?.nodes[0]?.id || "");
+      const [selectedEdgeId, setSelectedEdgeId] = useState("");
+      const [connectSourceId, setConnectSourceId] = useState("");
+      const [connectTargetId, setConnectTargetId] = useState("");
+      const [editDialog, setEditDialog] = useState(null);
+      const [resizingNodeId, setResizingNodeId] = useState("");
+      const [saveStatus, setSaveStatus] = useState("已載入");
+      const [persistentStatus, setPersistentStatus] = useState(
+        supportsAutoPersistentFile() ? "自動儲存 JSON 準備中" : "此瀏覽器不支援自動儲存 JSON"
+      );
+      const [lastJsonSavedAt, setLastJsonSavedAt] = useState(initialState.savedAt || "");
+      const [fontSizeMode, setFontSizeMode] = useState(initialState.fontSizeMode || "medium");
+      const [viewMode, setViewMode] = useState("edit");
+      const [autoSaveEnabled, setAutoSaveEnabled] = useState(loadAutoSaveEnabled);
+      const [flowViewport, setFlowViewport] = useState({ x: 32, y: 28, zoom: 0.82 });
+      const updateNodeInternals = useUpdateNodeInternals();
+      const latestSaveRef = React.useRef({ doc, flows, activeFlowId, fontSizeMode });
+      const dirtySaveRef = React.useRef(false);
+      const saveMountedRef = React.useRef(false);
+      const skipNextDirtyRef = React.useRef(false);
+      const persistentHandleRef = React.useRef(null);
+      const persistentReadyRef = React.useRef(false);
+      const autosaveInFlightRef = React.useRef(false);
+      const resizeFrameRef = React.useRef(0);
+      const immediateAutosaveRef = React.useRef(false);
+      const tabDragRef = React.useRef({ active: false, moved: false, startX: 0, scrollLeft: 0 });
+
+      const activeFlow = flows.find((item) => item.id === activeFlowId) || flows[0];
+      const activeFlowDoc = getFlowDoc(activeFlow);
+      const activeHiddenLanes = Array.isArray(activeFlowDoc.hiddenLanes) ? activeFlowDoc.hiddenLanes.map(normalizeLane) : [];
+      const activeCustomLaneGroups = activeFlowDoc.customLaneGroups || {};
+      const documentVersion = getDocumentVersion(flows);
+      const edgeLabelFontSize = { small: 16, medium: 18, large: 22 }[fontSizeMode] || 18;
+      const [nodes, setNodes, onNodesChange] = useNodesState(activeFlow.nodes);
+      const [edges, setEdges, onEdgesChange] = useEdgesState(activeFlow.edges);
+
+      const flushAutosave = useCallback(async (updateStatus = true, force = false) => {
+        if (!autoSaveEnabled) {
+          if (updateStatus) setSaveStatus("自動存檔已關閉，未寫入 JSON");
+          return true;
+        }
+        if (autosaveInFlightRef.current) return false;
+        if (!dirtySaveRef.current && !force) return true;
+        autosaveInFlightRef.current = true;
+        const latest = latestSaveRef.current;
+        const payload = makeSavePayload(latest.doc, latest.flows, latest.activeFlowId, latest.fontSizeMode);
+        const localOk = saveStatePayload(payload);
+        dirtySaveRef.current = false;
+        let fileOk = true;
+        let wrotePersistentFile = false;
+        const handle = persistentHandleRef.current;
+        if (handle && persistentReadyRef.current) {
+          try {
+            const writeResult = await writePersistentState(handle, payload);
+            if (writeResult?.paused) {
+              fileOk = false;
+              dirtySaveRef.current = true;
+              setAutoSaveEnabled(false);
+              rememberAutoSaveEnabled(false);
+              setPersistentStatus(`自動儲存 JSON 已暫停：${handle.name}`);
+            } else {
+              wrotePersistentFile = true;
+              setLastJsonSavedAt(payload.savedAt);
+              setPersistentStatus(`自動儲存 JSON 已寫入：${handle.name}`);
+            }
+          } catch {
+            fileOk = false;
+            dirtySaveRef.current = true;
+            persistentReadyRef.current = false;
+            setPersistentStatus(`自動儲存 JSON 寫入失敗：${handle.name}`);
+          }
+        }
+        autosaveInFlightRef.current = false;
+        if (updateStatus) {
+          const time = new Date().toLocaleTimeString("zh-TW", { hour12: false });
+          if (localOk && fileOk && wrotePersistentFile) {
+            setSaveStatus(`已自動寫入 JSON ${time}`);
+          } else if (localOk && fileOk) {
+            setSaveStatus(`已存瀏覽器暫存 ${time}，尚未建立自動儲存 JSON`);
+          } else if (!fileOk && !autoSaveEnabled) {
+            setSaveStatus("自動存檔已關閉，未寫入 JSON");
+          } else if (!fileOk) {
+            setSaveStatus("自動儲存 JSON 已暫停或寫入失敗，已保留待重試");
+          } else {
+            setSaveStatus("瀏覽器暫存失敗");
+          }
+        }
+        return localOk && fileOk;
+      }, [autoSaveEnabled]);
+
+      const setupAutoPersistentJson = useCallback(async (statusPrefix = "自動儲存 JSON") => {
+        if (!supportsAutoPersistentFile()) {
+          persistentHandleRef.current = null;
+          persistentReadyRef.current = false;
+          setPersistentStatus("此瀏覽器不支援自動儲存 JSON");
+          setSaveStatus("請改用 Chrome/Edge，或使用匯出 JSON 備份");
+          return null;
+        }
+        const handle = await getAutoPersistentHandle();
+        persistentHandleRef.current = handle;
+        persistentReadyRef.current = true;
+        if (handle.paused) {
+          setAutoSaveEnabled(false);
+          rememberAutoSaveEnabled(false);
+          setPersistentStatus(`自動儲存 JSON 已暫停：${handle.name}`);
+        } else {
+          setAutoSaveEnabled(true);
+          rememberAutoSaveEnabled(true);
+        }
+        const fileState = await readPersistentState(handle).catch(() => null);
+        const newestState = pickNewestState(initialState, fileState);
+        if (newestState) {
+          const fileFlow = newestState.flows.find((flow) => flow.id === newestState.activeFlowId) || newestState.flows[0];
+          skipNextDirtyRef.current = true;
+          setDoc(newestState.doc);
+          setFlows(newestState.flows);
+          setActiveFlowId(newestState.activeFlowId);
+          setNodes(fileFlow.nodes);
+          setEdges(fileFlow.edges);
+          setSelectedNodeId(fileFlow.nodes[0]?.id || "");
+          setSelectedEdgeId("");
+          setFontSizeMode(newestState.fontSizeMode);
+          latestSaveRef.current = newestState;
+          const payload = makeSavePayload(newestState.doc, newestState.flows, newestState.activeFlowId, newestState.fontSizeMode);
+          const writeResult = await writePersistentState(handle, payload);
+          if (!writeResult?.paused) saveStatePayload(payload);
+          setLastJsonSavedAt(writeResult?.paused ? newestState.savedAt || "" : payload.savedAt);
+          dirtySaveRef.current = Boolean(writeResult?.paused);
+          const sourceText = fileState && newestState === initialState && savedAtTime(initialState) > savedAtTime(fileState)
+            ? "瀏覽器暫存較新，已同步回 JSON"
+            : "已載入並同步";
+          setPersistentStatus(writeResult?.paused ? `${statusPrefix} 已載入，寫入暫停：${handle.name}` : `${statusPrefix} ${sourceText}：${handle.name}`);
+          setSaveStatus(writeResult?.paused ? `已載入自動儲存 JSON，但自動存檔關閉：${handle.name}` : `已載入自動儲存 JSON：${handle.name}`);
+          return handle;
+        }
+        const latest = latestSaveRef.current;
+        const payload = makeSavePayload(latest.doc, latest.flows, latest.activeFlowId, latest.fontSizeMode);
+        const writeResult = await writePersistentState(handle, payload);
+        if (!writeResult?.paused) saveStatePayload(payload);
+        setLastJsonSavedAt(writeResult?.paused ? "" : payload.savedAt);
+        dirtySaveRef.current = false;
+        setPersistentStatus(writeResult?.paused ? `${statusPrefix} 已建立，寫入暫停：${handle.name}` : `${statusPrefix} 已建立並寫入：${handle.name}`);
+        setSaveStatus(writeResult?.paused ? `已建立自動儲存 JSON，但自動存檔關閉：${handle.name}` : `已自動建立 JSON 檔並存檔：${handle.name}`);
+        return handle;
+      }, []);
+
+      React.useEffect(() => {
+        setNodes(activeFlow.nodes);
+        setEdges(activeFlow.edges);
+        setSelectedNodeId(activeFlow.nodes[0]?.id || "");
+        setSelectedEdgeId("");
+        setConnectSourceId("");
+        setConnectTargetId("");
+      }, [activeFlowId, activeFlow?.revision]);
+
+      React.useEffect(() => {
+        const nextNodes = prepareNodesForSave(nodes);
+        const nextEdges = prepareEdgesForSave(edges);
+        setFlows((current) => {
+          let changed = false;
+          const next = current.map((flow) => {
+            if (flow.id !== activeFlowId) return flow;
+            if (sameJsonValue(flow.nodes, nextNodes) && sameJsonValue(flow.edges, nextEdges)) return flow;
+            changed = true;
+            return { ...flow, nodes: nextNodes, edges: nextEdges };
+          });
+          return changed ? next : current;
+        });
+      }, [nodes, edges]);
+
+      React.useEffect(() => {
+        latestSaveRef.current = { doc, flows, activeFlowId, fontSizeMode };
+        if (!saveMountedRef.current) {
+          saveMountedRef.current = true;
+          return;
+        }
+        if (skipNextDirtyRef.current) {
+          skipNextDirtyRef.current = false;
+          return;
+        }
+        dirtySaveRef.current = true;
+        setSaveStatus(autoSaveEnabled ? "有未儲存變更，15 秒內自動儲存" : "有未儲存變更，自動存檔已關閉");
+        if (immediateAutosaveRef.current && autoSaveEnabled) {
+          immediateAutosaveRef.current = false;
+          window.setTimeout(() => {
+            void flushAutosave(true, true);
+          }, 0);
+        }
+      }, [doc, flows, activeFlowId, fontSizeMode, autoSaveEnabled, flushAutosave]);
+
+      React.useEffect(() => {
+        const flushLocalState = () => {
+          if (!autoSaveEnabled) return true;
+          if (!dirtySaveRef.current) return true;
+          const latest = latestSaveRef.current;
+          const ok = saveStatePayload(makeSavePayload(latest.doc, latest.flows, latest.activeFlowId, latest.fontSizeMode));
+          dirtySaveRef.current = false;
+          return ok;
+        };
+        const timer = window.setInterval(() => {
+          void flushAutosave(true);
+        }, 15000);
+        const handleBeforeUnload = () => flushLocalState();
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => {
+          window.clearInterval(timer);
+          window.removeEventListener("beforeunload", handleBeforeUnload);
+          flushLocalState();
+        };
+      }, [flushAutosave, autoSaveEnabled]);
+
+      React.useEffect(() => {
+        let cancelled = false;
+        setupAutoPersistentJson()
+          .catch(() => {
+            if (!cancelled) {
+              persistentHandleRef.current = null;
+              persistentReadyRef.current = false;
+              setPersistentStatus("自動儲存 JSON 建立失敗");
+              setSaveStatus("自動儲存 JSON 建立失敗，請先匯出 JSON 備份");
+            }
+          });
+        return () => {
+          cancelled = true;
+        };
+      }, [setupAutoPersistentJson]);
+
+      React.useEffect(() => {
+        setFlowViewport(viewMode === "present" ? { x: 24, y: 28, zoom: 0.9 } : { x: 32, y: 28, zoom: 0.82 });
+      }, [activeFlowId, viewMode]);
+
+      React.useEffect(() => () => {
+        if (resizeFrameRef.current) window.cancelAnimationFrame(resizeFrameRef.current);
+      }, []);
+
+      const nodeTypes = useMemo(() => ({ baNode: BaNode, laneNode: LaneNode }), []);
+      const edgeTypes = useMemo(() => ({ cleanStep: CleanStepEdge }), []);
+      const visibleLaneGroups = useMemo(() => getVisibleLaneGroups(nodes, activeHiddenLanes, activeCustomLaneGroups), [nodes, activeHiddenLanes.join("|"), JSON.stringify(activeCustomLaneGroups)]);
+      const visibleLanes = useMemo(() => visibleLaneGroups.flatMap((group) => group.lanes), [visibleLaneGroups]);
+      const displayLaneGroups = useMemo(() => visibleLaneGroups.concat([{ group: "備註", lanes: [noteLaneName] }]), [visibleLaneGroups]);
+      const displayLanes = useMemo(() => visibleLanes.concat([noteLaneName]), [visibleLanes]);
+      const laneBoardWidth = Math.max(visibleLanes.length * laneWidth + noteLaneWidth, 1120);
+      const flowWorldHeight = canvasHeight;
+      const flowViewportHeight = viewMode === "present" ? "calc(100vh - 176px)" : "680px";
+      const selectedNode = nodes.find((item) => item.id === selectedNodeId);
+      const selectedEdge = edges.find((item) => item.id === selectedEdgeId);
+      const highlightedEdgeIds = useMemo(() => {
+        if (selectedEdge) return new Set([selectedEdge.id]);
+        if (selectedNodeId) {
+          return new Set(edges.filter((item) => item.source === selectedNodeId || item.target === selectedNodeId).map((item) => item.id));
+        }
+        return new Set();
+      }, [edges, selectedEdge, selectedNodeId]);
+      const edgeEndpointNodeIds = useMemo(() => {
+        const ids = new Set();
+        if (selectedEdge) {
+          ids.add(selectedEdge.source);
+          ids.add(selectedEdge.target);
+        } else if (selectedNodeId) {
+          edges.forEach((item) => {
+            if (item.source === selectedNodeId) ids.add(item.target);
+            if (item.target === selectedNodeId) ids.add(item.source);
+          });
+        }
+        return ids;
+      }, [edges, selectedEdge, selectedNodeId]);
+      const refreshNodeInternals = useCallback((nodeId) => {
+        if (!nodeId) return;
+        if (resizeFrameRef.current) window.cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = window.requestAnimationFrame(() => {
+          resizeFrameRef.current = 0;
+          updateNodeInternals(nodeId);
+        });
+      }, [updateNodeInternals]);
+      const applyNodeResize = useCallback((nodeId, size) => {
+        if (!nodeId || !size) return;
+        setNodes((items) => clampFlowNodes(items.map((item) => item.id === nodeId
+          ? (() => {
+              const width = isNoteNode(item) ? noteNodeWidth : clamp(Math.round(size.width), minNodeWidth, maxNodeWidth);
+              const nextData = { ...item.data, width };
+              return {
+                ...item,
+                data: {
+                  ...nextData,
+                  height: isNoteNode(item)
+                    ? clamp(Math.round(size.height), minNoteHeight, canvasHeight - 120)
+                    : clamp(Math.round(size.height), minNodeHeight, maxNodeHeight)
+                }
+              };
+            })()
+          : item)));
+        refreshNodeInternals(nodeId);
+      }, [setNodes, refreshNodeInternals]);
+      const handleNodeResizeStart = useCallback((nodeId) => {
+        setResizingNodeId(nodeId);
+        refreshNodeInternals(nodeId);
+      }, [refreshNodeInternals]);
+      const handleNodeResize = useCallback((nodeId, size) => {
+        setResizingNodeId(nodeId);
+        applyNodeResize(nodeId, size);
+      }, [applyNodeResize]);
+      const handleNodeResizeEnd = useCallback((nodeId, size) => {
+        applyNodeResize(nodeId, size);
+        refreshNodeInternals(nodeId);
+        window.requestAnimationFrame(() => setResizingNodeId(""));
+      }, [applyNodeResize, refreshNodeInternals]);
+      const laneNodes = useMemo(() => {
+        let x = 0;
+        let laneIndex = 0;
+        const laneBackgrounds = [
+          "rgba(239, 246, 255, 0.42)",
+          "rgba(240, 253, 244, 0.42)",
+          "rgba(255, 251, 235, 0.42)",
+          "rgba(250, 245, 255, 0.42)"
+        ];
+        return displayLaneGroups.flatMap((group) => group.lanes.map((laneName) => {
+          const width = laneName === noteLaneName ? noteLaneWidth : laneWidth;
+          const background = laneBackgrounds[laneIndex % laneBackgrounds.length];
+          const laneNode = {
+            id: `lane-${laneName}`,
+            type: "laneNode",
+            position: { x, y: 0 },
+            width,
+            height: flowWorldHeight,
+            style: { width, height: flowWorldHeight },
+            origin: [0, 0],
+            data: { group: group.group, lane: laneName, width, height: flowWorldHeight, background },
+            draggable: false,
+            selectable: false,
+            connectable: false,
+            deletable: false,
+            focusable: false,
+            zIndex: -1
+          };
+          x += width;
+          laneIndex += 1;
+          return laneNode;
+        }));
+      }, [displayLaneGroups, flowWorldHeight]);
+      const nodesWithWarnings = useMemo(() => nodes.map((item) => {
+        const clamped = clampNodeToLane(item, visibleLanes);
+        const focus = selectedEdge && (selectedEdge.source === item.id || selectedEdge.target === item.id)
+          ? "edge"
+          : edgeEndpointNodeIds.has(item.id)
+            ? "related"
+            : "";
+        return {
+          ...clamped,
+          origin: [0, 0],
+          zIndex: 20,
+          data: {
+            ...makeNodeData(clamped, edges),
+            focus,
+            readonly: viewMode === "present",
+            onResizeStart: handleNodeResizeStart,
+            onResize: handleNodeResize,
+            onResizeEnd: handleNodeResizeEnd
+          },
+          style: {
+            width: clamped.data.width,
+            height: clamped.data.height
+          }
+        };
+      }), [nodes, edges, visibleLanes, selectedEdge, edgeEndpointNodeIds, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
+      const displayNodes = useMemo(() => laneNodes.concat(nodesWithWarnings), [laneNodes, nodesWithWarnings]);
+      const displayEdges = useMemo(() => edges.map((item) => {
+        const isSelectedEdge = selectedEdgeId === item.id;
+        const isHighlighted = highlightedEdgeIds.has(item.id);
+        const isResizingEdge = resizingNodeId && (item.source === resizingNodeId || item.target === resizingNodeId);
+        const baseEdge = item;
+        return {
+          ...baseEdge,
+          reconnectable: viewMode !== "present",
+          animated: isHighlighted || isResizingEdge,
+          style: {
+            ...(baseEdge.style || {}),
+            stroke: isSelectedEdge ? "#b45309" : isHighlighted ? "#047857" : "#1d4ed8",
+            strokeWidth: isSelectedEdge ? 4 : isHighlighted ? 3.5 : 2.6,
+            strokeDasharray: isResizingEdge ? "8 7" : undefined
+          },
+          markerEnd: { ...(baseEdge.markerEnd || { type: "arrowclosed" }), color: isSelectedEdge ? "#b45309" : isHighlighted ? "#047857" : "#1d4ed8" },
+          labelStyle: { ...(baseEdge.labelStyle || {}), fontSize: edgeLabelFontSize, fontWeight: 900, fill: "#0f172a" },
+          pathOptions: baseEdge.type === "cleanStep"
+            ? {}
+            : { ...(baseEdge.pathOptions || {}), offset: Math.max(Number(baseEdge.pathOptions?.offset) || 0, edgeTextClearance) },
+          labelBgPadding: baseEdge.labelBgPadding || [18, 10],
+          labelBgBorderRadius: baseEdge.labelBgBorderRadius || 8,
+          labelBgStyle: { fill: "#fff", stroke: isSelectedEdge ? "#b45309" : isHighlighted ? "#047857" : "#93c5fd" }
+        };
+      }), [edges, selectedEdgeId, highlightedEdgeIds, resizingNodeId, edgeLabelFontSize]);
+      const handleNodesChange = useCallback((changes) => {
+        onNodesChange(changes.filter((change) => !String(change.id).startsWith("lane-")));
+      }, [onNodesChange]);
+
+      const onConnect = useCallback((params) => {
+        const resolvedConnection = resolveConnectionHandles(params, edges);
+        if (!resolvedConnection) return;
+        setEdges((eds) => addEdge({
+          ...resolvedConnection,
+          id: `e-${resolvedConnection.source}-${resolvedConnection.target}-${Date.now()}`,
+          label: "下一步",
+          type: "cleanStep",
+          markerEnd: { type: "arrowclosed" },
+          style: { strokeWidth: 2.6, stroke: "#1d4ed8" },
+          labelStyle: { fontSize: edgeLabelFontSize, fontWeight: 900, fill: "#0f172a" },
+          interactionWidth: 32,
+          pathOptions: {},
+          labelBgPadding: [18, 10],
+          labelBgBorderRadius: 8,
+          labelBgStyle: { fill: "#fff", stroke: "#cbd5e1" }
+        }, eds));
+      }, [edges, setEdges, edgeLabelFontSize]);
+
+      const onReconnect = useCallback((oldEdge, newConnection) => {
+        const resolvedConnection = resolveConnectionHandles(newConnection, edges, oldEdge.id);
+        if (!resolvedConnection) return;
+        setEdges((eds) => reconnectEdge(oldEdge, {
+          ...resolvedConnection
+        }, eds));
+      }, [edges, setEdges]);
+
+      const onReconnectEnd = useCallback((event, oldEdge, handleType) => {
+        const pointer = getPointerClientPosition(event);
+        if (!pointer || !oldEdge || !handleType) return;
+        const isSource = handleType === "source";
+        const nodeId = isSource ? oldEdge.source : oldEdge.target;
+        const nearest = nearestNodeHandleAtPoint(nodeId, pointer.clientX, pointer.clientY);
+        if (!nearest?.handleId) return;
+        setEdges((items) => items.map((item) => {
+          if (item.id !== oldEdge.id) return item;
+          const nextEdge = isSource
+            ? { ...item, sourceHandle: normalizeHandleId(nearest.handleId, "right-2", "source") }
+            : { ...item, targetHandle: normalizeHandleId(nearest.handleId, "left-2", "target") };
+          if (nextEdge.sourceHandle === item.sourceHandle && nextEdge.targetHandle === item.targetHandle) return item;
+          const resolvedEdge = resolveConnectionHandles(nextEdge, items, item.id);
+          return resolvedEdge ? { ...nextEdge, sourceHandle: resolvedEdge.sourceHandle, targetHandle: resolvedEdge.targetHandle } : item;
+        }));
+      }, [setEdges]);
+
+      const connectNodes = (sourceId, targetId) => {
+        if (!sourceId || !targetId || sourceId === targetId) return;
+        const sourceNode = nodes.find((item) => item.id === sourceId);
+        const targetNode = nodes.find((item) => item.id === targetId);
+        if (isNoteNode(sourceNode) || isNoteNode(targetNode)) return;
+        setEdges((items) => {
+          const sourceHandle = firstFreeHandle(items, sourceId, ["right-2", "bottom-2", "left-2", "top-2"], "source");
+          const targetHandle = firstFreeHandle(items, targetId, ["left-2", "top-2", "right-2", "bottom-2"], "target");
+          const resolvedConnection = resolveConnectionHandles({ source: sourceId, target: targetId, sourceHandle, targetHandle }, items);
+          if (!resolvedConnection) return items;
+          return addEdge({
+            source: sourceId,
+            target: targetId,
+            id: `e-${sourceId}-${targetId}-${Date.now()}`,
+            label: "下一步",
+            sourceHandle: resolvedConnection.sourceHandle,
+            targetHandle: resolvedConnection.targetHandle,
+            type: "cleanStep",
+            markerEnd: { type: "arrowclosed" },
+            style: { strokeWidth: 2.6, stroke: "#1d4ed8" },
+            labelStyle: { fontSize: edgeLabelFontSize, fontWeight: 900, fill: "#0f172a" },
+            interactionWidth: 32,
+            pathOptions: {},
+            labelBgPadding: [18, 10],
+            labelBgBorderRadius: 8,
+            labelBgStyle: { fill: "#fff", stroke: "#cbd5e1" }
+          }, items);
+        });
+      };
+
+      const updateFlowDoc = (key, value) => {
+        setFlows((items) => items.map((item) => {
+          if (item.id !== activeFlowId) return item;
+          const nextDoc = {
+            ...getFlowDoc(item),
+            [key]: value
+          };
+          return { ...item, doc: normalizeFlowDoc({ ...item, doc: nextDoc }) };
+        }));
+      };
+      const updateNodeData = (key, value) => {
+        if (!selectedNode) return;
+        const laneValue = typeof value === "object" && value ? value.lane : value;
+        const nextLane = key === "lane" ? normalizeLane(laneValue) : "";
+        const nextGroup = key === "lane" && typeof value === "object" && value ? String(value.group || "").trim() : "";
+        if (key === "lane") {
+          setFlows((items) => items.map((item) => {
+            if (item.id !== activeFlowId) return item;
+            const currentDoc = getFlowDoc(item);
+            const customLaneGroups = { ...(currentDoc.customLaneGroups || {}) };
+            if (nextGroup) customLaneGroups[nextLane] = nextGroup;
+            const nextDoc = {
+              ...currentDoc,
+              customLaneGroups,
+              hiddenLanes: (currentDoc.hiddenLanes || []).map(normalizeLane).filter((lane) => lane !== nextLane)
+            };
+            return { ...item, doc: normalizeFlowDoc({ ...item, doc: nextDoc }) };
+          }));
+        }
+        setNodes((items) => {
+          const updated = items.map((item) => item.id === selectedNode.id
+            ? (() => {
+                const nextData = {
+                  ...item.data,
+                  [key]: key === "lane"
+                    ? nextLane
+                    : key === "width"
+                      ? isNoteNode(item) ? noteNodeWidth : clamp(Number(value), minNodeWidth, maxNodeWidth)
+                      : key === "height"
+                        ? Number(value)
+                        : value
+                };
+                nextData.height = key === "height"
+                  ? isNoteNode(item)
+                    ? clamp(Number(value), minNoteHeight, canvasHeight - 120)
+                    : clamp(Number(value), minNodeHeight, maxNodeHeight)
+                  : isNoteNode(item)
+                    ? clamp(Number(nextData.height) || defaultNoteHeight, minNoteHeight, canvasHeight - 120)
+                    : clamp(Number(nextData.height) || defaultNodeHeight, minNodeHeight, maxNodeHeight);
+                return { ...item, data: nextData };
+              })()
+            : item);
+          return key === "lane" || key === "width" || key === "height" || key === "title" || key === "desc" || key === "constraint" ? clampFlowNodes(updated) : updated;
+        });
+      };
+
+      const deleteLane = (lane) => {
+        const targetLane = normalizeLane(lane);
+        if (!targetLane || targetLane === noteLaneName) return;
+        const remainingLanes = getLaneOptions(nodes, selectedNode?.data?.lane, activeHiddenLanes)
+          .filter((item) => item !== targetLane);
+        if (remainingLanes.length === 0) {
+          setSaveStatus("至少需要保留一個泳道");
+          return;
+        }
+        const fallbackLane = remainingLanes[0];
+        setNodes((items) => clampFlowNodes(items.map((item) => {
+          if (isNoteNode(item) || normalizeLane(item.data?.lane) !== targetLane) return item;
+          return { ...item, data: { ...item.data, lane: fallbackLane } };
+        })));
+        setFlows((items) => items.map((item) => {
+          if (item.id !== activeFlowId) return item;
+          const currentDoc = getFlowDoc(item);
+          const hiddenLanes = [...new Set((currentDoc.hiddenLanes || []).map(normalizeLane).concat([targetLane]))];
+          const customLaneGroups = { ...(currentDoc.customLaneGroups || {}) };
+          delete customLaneGroups[targetLane];
+          const nextDoc = { ...currentDoc, hiddenLanes, customLaneGroups };
+          return { ...item, doc: normalizeFlowDoc({ ...item, doc: nextDoc }) };
+        }));
+        setSaveStatus(`已刪除泳道：${targetLane}`);
+        immediateAutosaveRef.current = true;
+      };
+
+      const updateFlowName = (value) => {
+        setFlows((items) => items.map((item) => item.id === activeFlowId ? { ...item, name: value } : item));
+      };
+
+      const updateFlowVersion = (value) => {
+        setFlows((items) => items.map((item) => item.id === activeFlowId ? { ...item, version: flowVersions.includes(value) ? value : "非正式" } : item));
+      };
+
+      const moveFlow = (flowId, direction) => {
+        setFlows((items) => {
+          const index = items.findIndex((item) => item.id === flowId);
+          if (index < 0) return items;
+          let nextIndex = index;
+          if (direction === "first") nextIndex = 0;
+          if (direction === "last") nextIndex = items.length - 1;
+          if (direction === "up") nextIndex = Math.max(0, index - 1);
+          if (direction === "down") nextIndex = Math.min(items.length - 1, index + 1);
+          if (nextIndex === index) return items;
+          const next = items.slice();
+          const [moved] = next.splice(index, 1);
+          next.splice(nextIndex, 0, moved);
+          return next;
+        });
+        setActiveFlowId(flowId);
+        immediateAutosaveRef.current = true;
+      };
+
+      const updateEdge = (key, value) => {
+        if (!selectedEdge) return;
+        setEdges((items) => items.map((item) => item.id === selectedEdge.id ? { ...item, [key]: value } : item));
+      };
+
+      const updateEdgeFields = (patch) => {
+        if (!selectedEdge) return;
+        setEdges((items) => items.map((item) => {
+          if (item.id !== selectedEdge.id) return item;
+          const nextEdge = {
+            ...item,
+            ...patch,
+            sourceHandle: normalizeHandleId(patch.sourceHandle || item.sourceHandle, "right-2", "source"),
+            targetHandle: normalizeHandleId(patch.targetHandle || item.targetHandle, "left-2", "target")
+          };
+          const changesConnection = ["source", "target", "sourceHandle", "targetHandle"].some((key) => Object.prototype.hasOwnProperty.call(patch, key));
+          if (changesConnection) {
+            const resolvedEdge = resolveConnectionHandles(nextEdge, items, item.id);
+            if (!resolvedEdge) {
+              setSaveStatus("此節點沒有可用連接點，請先調整或刪除其他線");
+              return item;
+            }
+            if (resolvedEdge.sourceHandle !== nextEdge.sourceHandle || resolvedEdge.targetHandle !== nextEdge.targetHandle) {
+              setSaveStatus("選到的連接點已被使用，已自動改用同節點其他可用連接點");
+            }
+            return { ...nextEdge, sourceHandle: resolvedEdge.sourceHandle, targetHandle: resolvedEdge.targetHandle };
+          }
+          return nextEdge;
+        }));
+      };
+
+      const addNodeToFlow = () => {
+        const id = `N${nodes.length + 1}`;
+        setNodes((items) => clampFlowNodes(items.concat(node(id, "申請人", "task", lanePadding, 240 + nodes.length * 28, "新增流程節點", "請填寫此節點的流程說明。", "待補"))));
+        setSelectedNodeId(id);
+        setSelectedEdgeId("");
+      };
+
+      const addNoteToFlow = () => {
+        const id = `R${nodes.filter((item) => isNoteNode(item)).length + 1}`;
+        setNodes((items) => clampFlowNodes(items.concat(noteNode(id, 120 + nodes.length * 16, "新增備註", "請填寫此流程的補充說明。"))));
+        setSelectedNodeId(id);
+        setSelectedEdgeId("");
+      };
+
+      const hasConnectedEdges = (nodeId) => edges.some((item) => item.source === nodeId || item.target === nodeId);
+
+      const deleteSelectedNode = () => {
+        if (!selectedNode || nodes.length <= 1) return false;
+        if (hasConnectedEdges(selectedNode.id)) {
+          setSaveStatus("節點仍有連線，請先刪除線");
+          return false;
+        }
+        setNodes((items) => items.filter((item) => item.id !== selectedNode.id));
+        setSelectedNodeId(nodes.find((item) => item.id !== selectedNode.id)?.id || "");
+        setEditDialog(null);
+        return true;
+      };
+
+      const deleteSelectedEdge = () => {
+        if (!selectedEdge) return false;
+        setEdges((items) => items.filter((item) => item.id !== selectedEdge.id));
+        setSelectedEdgeId("");
+        setEditDialog(null);
+        return true;
+      };
+
+      React.useEffect(() => {
+        const handleKeyDown = (event) => {
+          const target = event.target;
+          const tagName = target?.tagName;
+          const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(tagName) || target?.isContentEditable;
+          const key = String(event.key || "").toLowerCase();
+          const code = String(event.code || "").toLowerCase();
+          const isDeleteKey = key === "delete" || key === "del" || code === "delete" || code === "del" || event.keyCode === 46;
+          if (isTyping || !isDeleteKey) return;
+          if (selectedEdge) {
+            event.preventDefault();
+            deleteSelectedEdge();
+            return;
+          }
+          if (selectedNode) {
+            event.preventDefault();
+            deleteSelectedNode();
+          }
+        };
+        window.addEventListener("keydown", handleKeyDown, true);
+        return () => window.removeEventListener("keydown", handleKeyDown, true);
+      }, [selectedNode, selectedEdge, deleteSelectedNode, deleteSelectedEdge]);
+
+      const onNodeDragStop = (_event, movedNode) => {
+        setNodes((items) => {
+          return clampFlowNodes(items.map((item) => item.id === movedNode.id
+            ? { ...item, position: { ...item.position, y: movedNode.position.y } }
+            : item));
+        });
+      };
+
+      const onNodeDrag = (_event, movedNode) => {
+        setNodes((items) => {
+          const visible = getVisibleLanes(items);
+          return items.map((item) => item.id === movedNode.id
+            ? clampNodeToLane({ ...item, position: { ...item.position, y: movedNode.position.y } }, visible)
+            : item);
+        });
+      };
+
+      const addFlow = () => {
+        const id = `flow-${flows.length + 1}`;
+        const next = {
+          id,
+          name: `新流程圖 ${flows.length + 1}`,
+          version: "非正式",
+          doc: normalizeFlowDoc({ id, name: `新流程圖 ${flows.length + 1}`, version: "非正式" }),
+          nodes: [
+            node("S1", "申請人", "start", 54, 120, "流程起點", "請填寫此流程的起點。", "待補"),
+            node("S2", "表單介面", "end", 454, 120, "流程結束", "請填寫此流程的結束條件。", "待補"),
+            noteNode("R1", 120, "流程備註", "可在此補充本流程的例外、待確認或閱讀提示。")
+          ],
+          edges: [edge("S1", "S2", "完成")]
+        };
+        setFlows((items) => items.concat(next));
+        setActiveFlowId(id);
+      };
+
+      const duplicateFlow = () => {
+        const source = flows.find((item) => item.id === activeFlowId);
+        const id = `flow-${flows.length + 1}`;
+        const copy = JSON.parse(JSON.stringify(source));
+        copy.id = id;
+        copy.name = `${source.name} 複本`;
+        copy.doc = normalizeFlowDoc(copy);
+        setFlows((items) => items.concat(copy));
+        setActiveFlowId(id);
+      };
+
+      const deleteFlow = () => {
+        if (flows.length <= 1) return;
+        const next = flows.filter((item) => item.id !== activeFlowId);
+        setFlows(next);
+        setActiveFlowId(next[0].id);
+      };
+
+      const getJsonFilename = () => `${(activeFlowDoc.featureName || doc.featureName || "tool-swimlane-diagram").replace(/[\\/:*?"<>|]+/g, "-")}.data.json`;
+
+      const applyPersistentState = (fileState, handle) => {
+        const fileFlow = fileState.flows.find((flow) => flow.id === fileState.activeFlowId) || fileState.flows[0];
+        skipNextDirtyRef.current = true;
+        setDoc(fileState.doc);
+        setFlows(fileState.flows);
+        setActiveFlowId(fileState.activeFlowId);
+        setNodes(fileFlow.nodes);
+        setEdges(fileFlow.edges);
+        setSelectedNodeId(fileFlow.nodes[0]?.id || "");
+        setSelectedEdgeId("");
+        setFontSizeMode(fileState.fontSizeMode);
+        latestSaveRef.current = fileState;
+        dirtySaveRef.current = true;
+        persistentHandleRef.current = handle;
+        persistentReadyRef.current = true;
+        setLastJsonSavedAt(fileState.savedAt || "");
+        setPersistentStatus(`JSON 檔案 已連接：${handle.name}`);
+        setSaveStatus(`已載入JSON 檔案：${handle.name}，15 秒內同步`);
+      };
+
+      const jsonFilePickerTypes = [
+        {
+          description: "泳道圖 JSON",
+          accept: { "application/json": [".json"] }
+        }
+      ];
+
+      const openPersistentJson = async () => {
+        if (!("showOpenFilePicker" in window)) {
+          setPersistentStatus("此瀏覽器不支援開啟JSON 檔案");
+          setSaveStatus("請改用 Chrome/Edge 或手動匯入流程");
+          return;
+        }
+        try {
+          const [handle] = await window.showOpenFilePicker({
+            multiple: false,
+            types: jsonFilePickerTypes
+          });
+          const allowed = await hasFileWritePermission(handle, true);
+          if (!allowed) {
+            setPersistentStatus(`JSON 檔案 未授權：${handle.name}`);
+            setSaveStatus("未取得檔案寫入權限");
+            return;
+          }
+          const fileState = await readPersistentState(handle);
+          if (!fileState) {
+            setSaveStatus("JSON 格式不符合此泳道圖工具");
+            return;
+          }
+          await storePersistentHandle(handle);
+          applyPersistentState(fileState, handle);
+        } catch (error) {
+          if (error?.name === "AbortError") {
+            setSaveStatus("已取消開啟JSON 檔案");
+          } else {
+            setPersistentStatus("JSON 檔案 載入失敗");
+            setSaveStatus("JSON 檔案 載入失敗");
+          }
+        }
+      };
+
+      const connectPersistentJson = async () => {
+        try {
+          await setupAutoPersistentJson("自動儲存 JSON");
+        } catch (error) {
+          setPersistentStatus("自動儲存 JSON 建立失敗");
+          setSaveStatus("自動儲存 JSON 建立失敗，請先匯出 JSON 備份");
+        }
+      };
+
+      const saveNow = async () => {
+        const handle = persistentHandleRef.current;
+        if (!handle) {
+          await setupAutoPersistentJson("自動儲存 JSON");
+          return;
+        }
+        const allowed = await hasFileWritePermission(handle, true).catch(() => false);
+        persistentReadyRef.current = allowed;
+        if (!allowed) {
+          setPersistentStatus(`JSON 檔案 未授權：${handle.name}`);
+          setSaveStatus("未取得檔案寫入權限");
+          return;
+        }
+        dirtySaveRef.current = true;
+        await flushAutosave(true, true);
+      };
+
+      const toggleAutoSave = async () => {
+        const nextEnabled = !autoSaveEnabled;
+        setAutoSaveEnabled(nextEnabled);
+        rememberAutoSaveEnabled(nextEnabled);
+        if (!nextEnabled) {
+          window.localStorage.removeItem(STORAGE_KEY);
+          setPersistentStatus(`自動儲存 JSON 已暫停：${LOCAL_AUTOSAVE_FILE_NAME}`);
+          setSaveStatus("自動存檔已關閉，JSON 與 UI 暫存都不會自動寫入");
+          return;
+        }
+        dirtySaveRef.current = true;
+        setPersistentStatus(`自動儲存 JSON 已啟用：${LOCAL_AUTOSAVE_FILE_NAME}`);
+        setSaveStatus("自動存檔已開啟，15 秒內同步 JSON 與 UI 暫存");
+      };
+
+      const disconnectPersistentJson = async () => {
+        persistentHandleRef.current = null;
+        persistentReadyRef.current = false;
+        await clearPersistentHandle().catch(() => false);
+        setPersistentStatus("本次已停止自動儲存 JSON");
+        setSaveStatus("已停止本次自動儲存 JSON；重新整理後會再自動建立");
+      };
+
+      const exportJson = () => {
+        download(getJsonFilename(), JSON.stringify(makeSavePayload(doc, flows, activeFlowId, fontSizeMode), null, 2), "application/json");
+      };
+
+      const exportMarkdown = () => {
+        download(`${activeFlowDoc.featureName || doc.featureName || "tool-swimlane-diagram"}.output.md`, makeMarkdown(doc, flows), "text/markdown");
+      };
+
+      const openJsonLocation = async () => {
+        setSaveStatus(`JSON 位置：${LOCAL_AUTOSAVE_FILE_NAME}`);
+      };
+
+      const clearAutosave = () => {
+        window.localStorage.removeItem(STORAGE_KEY);
+        dirtySaveRef.current = false;
+        setSaveStatus("已清除暫存，重新整理後回到範例");
+      };
+
+      const renderStickyLaneBar = () => {
+        let laneIndex = 0;
+        const stickyColumns = displayLanes.map((laneName) => `${laneName === noteLaneName ? noteLaneWidth : laneWidth}px`).join(" ");
+        return h("div", { className: "sticky-lane-bar-wrap" },
+          h("div", {
+            className: "sticky-lane-bar",
+            style: {
+              width: laneBoardWidth,
+              gridTemplateColumns: stickyColumns,
+              transform: `translateX(${Math.round(flowViewport.x)}px) scale(${flowViewport.zoom})`
+            }
+          },
+            displayLaneGroups.flatMap((group) => group.lanes.map((laneName) => {
+              const cell = h("div", { key: `${group.group}-${laneName}-${laneIndex}`, className: "sticky-lane-cell" },
+                h("small", null, group.group),
+                h("strong", null, laneName)
+              );
+              laneIndex += 1;
+              return cell;
+            }))
+          )
+        );
+      };
+
+      const tabScrollHandlers = {
+        onWheel: (event) => {
+          const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+          if (!delta) return;
+          event.currentTarget.scrollLeft += delta;
+          event.preventDefault();
+        },
+        onPointerDown: (event) => {
+          if (event.button !== 0) return;
+          if (event.target.closest?.("button")) return;
+          tabDragRef.current = {
+            active: true,
+            moved: false,
+            startX: event.clientX,
+            scrollLeft: event.currentTarget.scrollLeft
+          };
+          event.currentTarget.classList.add("dragging");
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        },
+        onPointerMove: (event) => {
+          const state = tabDragRef.current;
+          if (!state.active) return;
+          const dx = event.clientX - state.startX;
+          if (Math.abs(dx) > 4) state.moved = true;
+          event.currentTarget.scrollLeft = state.scrollLeft - dx;
+        },
+        onPointerUp: (event) => {
+          const didMove = tabDragRef.current.moved;
+          tabDragRef.current.active = false;
+          event.currentTarget.classList.remove("dragging");
+          event.currentTarget.releasePointerCapture?.(event.pointerId);
+          if (didMove) {
+            window.setTimeout(() => {
+              tabDragRef.current.moved = false;
+            }, 0);
+          }
+        },
+        onPointerCancel: (event) => {
+          tabDragRef.current.active = false;
+          tabDragRef.current.moved = false;
+          event.currentTarget.classList.remove("dragging");
+        },
+        onPointerLeave: (event) => {
+          if (!tabDragRef.current.active) return;
+          tabDragRef.current.active = false;
+          tabDragRef.current.moved = false;
+          event.currentTarget.classList.remove("dragging");
+        }
+      };
+
+      const renderFlowCanvas = (readonly = false) => {
+        const defaultFlowViewport = readonly ? { x: 24, y: 28, zoom: 0.9 } : { x: 32, y: 28, zoom: 0.82 };
+        return h("div", { className: `flow-canvas ${readonly ? "presentation-canvas" : ""}`, style: { height: flowViewportHeight, minHeight: flowViewportHeight } },
+        readonly ? renderStickyLaneBar() : null,
+        h(ReactFlow, {
+          key: `${activeFlowId}-${readonly ? "present" : "edit"}`,
+          style: { height: "100%" },
+          nodes: displayNodes,
+          edges: displayEdges,
+          nodeTypes,
+          edgeTypes,
+          onNodesChange: handleNodesChange,
+          onEdgesChange,
+          onConnect,
+          onReconnect,
+          onReconnectEnd: readonly ? undefined : onReconnectEnd,
+          isValidConnection: (connection) => canUseConnection(connection, edges),
+          connectionMode: ConnectionMode.Loose,
+          onMove: (_event, viewport) => setFlowViewport(viewport),
+          onPaneClick: () => {
+            setSelectedNodeId("");
+            setSelectedEdgeId("");
+            setConnectSourceId("");
+            setConnectTargetId("");
+            setEditDialog(null);
+          },
+          onNodeClick: (_event, clickedNode) => {
+            if (String(clickedNode.id).startsWith("lane-")) return;
+            const clickedIsNote = isNoteNode(clickedNode);
+            if (!readonly && !clickedIsNote && connectSourceId && connectSourceId !== clickedNode.id) {
+              connectNodes(connectSourceId, clickedNode.id);
+              setConnectSourceId("");
+            }
+            if (!readonly && !clickedIsNote && connectTargetId && connectTargetId !== clickedNode.id) {
+              connectNodes(clickedNode.id, connectTargetId);
+              setConnectTargetId("");
+            }
+            setSelectedNodeId(clickedNode.id);
+            setSelectedEdgeId("");
+          },
+          onEdgeClick: (_event, clickedEdge) => { setSelectedEdgeId(clickedEdge.id); setSelectedNodeId(""); },
+          onNodeDoubleClick: (_event, clickedNode) => {
+            if (readonly || String(clickedNode.id).startsWith("lane-")) return;
+            setSelectedNodeId(clickedNode.id);
+            setSelectedEdgeId("");
+            setEditDialog("node");
+          },
+          onEdgeDoubleClick: (_event, clickedEdge) => {
+            if (readonly) return;
+            setSelectedEdgeId(clickedEdge.id);
+            setSelectedNodeId("");
+            setEditDialog("edge");
+          },
+          onNodeDrag: readonly ? undefined : onNodeDrag,
+          onNodeDragStop: readonly ? undefined : onNodeDragStop,
+          fitView: false,
+          defaultViewport: defaultFlowViewport,
+          nodeOrigin: [0, 0],
+          snapToGrid: true,
+          snapGrid: [16, 16],
+          nodesDraggable: !readonly,
+          nodesConnectable: !readonly,
+          edgesReconnectable: !readonly,
+          deleteKeyCode: null,
+          connectionRadius: 40,
+          reconnectRadius: 36,
+          defaultEdgeOptions: { type: "cleanStep", pathOptions: {}, interactionWidth: 32 },
+          translateExtent: [[-laneBoardWidth, -flowWorldHeight], [laneBoardWidth * 2 + 800, flowWorldHeight + 1200]],
+          minZoom: 0.5,
+          maxZoom: 1.45,
+          panOnDrag: true,
+          zoomOnScroll: true
+        },
+          h(Controls, null)
+        )
+      );
+      };
+
+      const renderFlowTabs = () => h("div", { className: "tabs", ...tabScrollHandlers },
+        flows.map((flow) => h("button", {
+          key: flow.id,
+          type: "button",
+          className: `tab ${flow.id === activeFlowId ? "active" : ""}`,
+          onClick: () => setActiveFlowId(flow.id)
+        },
+          flow.name,
+          h("span", { className: `tab-version ${flow.version === "正式" ? "formal" : ""}` }, flow.version || "非正式")
+        ))
+      );
+
+      const jsonSavedTimeText = formatJsonSavedTime(lastJsonSavedAt);
+      const autosaveStatusText = autoSaveEnabled
+        ? (dirtySaveRef.current ? `未儲存｜上次 ${jsonSavedTimeText}` : jsonSavedTimeText)
+        : `自動存檔關閉｜上次 ${jsonSavedTimeText}`;
+
+      const renderPresentationMain = () => h("main", { className: "presentation-app" },
+        h("section", { className: "flow-area" },
+          h("section", { className: "panel flow-shell" },
+            renderFlowTabs(),
+            renderFlowBrief(activeFlowDoc, activeFlow, visibleLaneGroups),
+            renderFlowCanvas(true)
+          )
+        )
+      );
+
+      const renderEditDialog = () => {
+        if (!editDialog) return null;
+        const isEdgeDialog = editDialog === "edge";
+        return h("div", {
+          className: "modal-backdrop",
+          onMouseDown: (event) => {
+            if (event.target === event.currentTarget) setEditDialog(null);
+          }
+        },
+          h("section", {
+            className: "modal-panel",
+            role: "dialog",
+            "aria-modal": "true",
+            "aria-label": isEdgeDialog ? "編輯線" : "編輯截點",
+            onMouseDown: (event) => event.stopPropagation()
+          },
+            h("div", { className: "modal-head" },
+              h("h2", null, isEdgeDialog ? "編輯線" : "編輯截點"),
+              h("button", { type: "button", onClick: () => setEditDialog(null) }, "關閉")
+            ),
+            h("div", { className: "modal-body" },
+              isEdgeDialog
+                ? selectedEdge
+                  ? renderEdgeEditor(selectedEdge, activeFlow.nodes, updateEdge, updateEdgeFields, deleteSelectedEdge)
+                  : h("p", { className: "hint" }, "目前沒有選取線。")
+                : renderSelectedNodeEditor(selectedNode, activeFlow.nodes, activeHiddenLanes, activeCustomLaneGroups, updateNodeData, deleteLane, addNodeToFlow, addNoteToFlow, deleteSelectedNode, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes)
+            )
+          )
+        );
+      };
+
+      return h("div", { className: `font-${fontSizeMode} ${viewMode === "present" ? "presentation-mode" : "edit-mode"}` },
+        h("header", null,
+          h("div", null,
+            h("h1", null, "tool-swimlane-diagram"),
+            h("p", null, "Developer: Jimmy C")
+          ),
+          h("div", { className: "toolbar" },
+            h("div", { className: "mode-control", "aria-label": "顯示模式" },
+              h("button", {
+                type: "button",
+                className: viewMode === "edit" ? "active" : "",
+                onClick: () => setViewMode("edit")
+              }, "編輯"),
+              h("button", {
+                type: "button",
+                className: viewMode === "present" ? "active" : "",
+                onClick: () => setViewMode("present")
+              }, "演示")
+            ),
+            h("span", { className: "tag info" }, "React Flow"),
+            h("span", {
+              className: `tag ${autoSaveEnabled ? "ok" : "danger"}`,
+              title: `${saveStatus} / ${persistentStatus} / ${LOCAL_AUTOSAVE_FILE_NAME} / ${jsonSavedTimeText}`
+            }, autosaveStatusText),
+            h("button", { type: "button", onClick: toggleAutoSave }, autoSaveEnabled ? "關閉自動存檔" : "開啟自動存檔"),
+            h("button", { type: "button", onClick: openJsonLocation }, "開啟 JSON 位置"),
+            h("button", { type: "button", onClick: exportMarkdown }, "匯出 MD")
+          )
+        ),
+        viewMode === "present" ? renderPresentationMain() : h("main", { className: `app ${collapsed ? "collapsed" : ""}` },
+          h("aside", { className: "side" },
+            h("div", { className: "side-rail" }, h("button", { type: "button", onClick: () => setCollapsed(false) }, "展開設定")),
+            h("div", { className: "side-content" },
+              h("div", { className: "toolbar", style: { marginBottom: "12px" } },
+                h("button", { type: "button", onClick: () => setCollapsed(true) }, "向左收合"),
+                h("span", { className: "tag info" }, selectedEdge ? "正在編輯箭頭" : connectSourceId ? `箭頭起點：${connectSourceId}` : connectTargetId ? `箭頭終點：${connectTargetId}` : "點節點後編輯")
+              ),
+              renderFlowManagerPanel({ flows, activeFlow, moveFlow, addFlow, duplicateFlow, deleteFlow }),
+              renderDocPanel(activeFlowDoc, updateFlowDoc, activeFlow, updateFlowVersion),
+              renderNodePanel({ activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes })
+            )
+          ),
+          h("section", { className: "flow-area" },
+            h("section", { className: "panel flow-shell" },
+              renderFlowTabs(),
+              h("div", { className: "flow-toolbar" },
+                h("div", null,
+                  h("strong", null, activeFlow.name),
+                  h("span", { className: `tag ${activeFlow.version === "正式" ? "formal" : "draft"}`, style: { marginLeft: "8px" } }, activeFlow.version || "非正式"),
+                  h("p", { className: "hint" }, "節點在泳道中自動水平置中，只能上下拖曳；拖曳或調整大小後，同泳道節點會自動避開重疊並保留間距。")
+                ),
+                h("div", { className: "toolbar" },
+                  h("button", { type: "button", className: "primary", onClick: addNodeToFlow }, "新增截點")
+                )
+              ),
+              renderFlowCanvas(false)
+            ),
+            h("section", { className: "panel" },
+              h("div", { className: "panel-body" },
+                h("div", { className: "output-head" },
+                  h("h2", null, `輸出：01-業務流程.md（${documentVersion}）`),
+                  h("button", { type: "button", onClick: () => copyText(makeMarkdown(doc, flows)) }, "複製 Markdown")
+                ),
+                h("pre", null, makeMarkdown(doc, flows))
+              )
+            )
+          )
+        ),
+        renderEditDialog()
+      );
+    }
+
+    function renderFlowManagerPanel(props) {
+      const { flows, activeFlow, moveFlow, addFlow, duplicateFlow, deleteFlow } = props;
+      return h("details", { className: "panel", open: true },
+        h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "泳道圖管理"), h("span", null, "▸"))),
+        h("div", { className: "panel-body" },
+          h("div", { className: "toolbar", style: { marginBottom: "12px" } },
+            h("button", { type: "button", onClick: addFlow }, "新增泳道圖"),
+            h("button", { type: "button", onClick: duplicateFlow }, "複製目前圖"),
+            h("button", { type: "button", className: "danger", disabled: flows.length <= 1, onClick: deleteFlow }, "刪除目前圖")
+          ),
+          renderFlowOrderEditor(flows, activeFlow.id, moveFlow)
+        )
+      );
+    }
+
+    function renderFlowOrderEditor(flows, activeFlowId, moveFlow) {
+      return h("div", { className: "status-note" },
+        h("strong", null, "Tab 順序"),
+        h("p", { className: "hint" }, "調整上方泳道圖 tab 的排列順序；tab 不會自動加序號。"),
+        h("div", { className: "flow-order-list" },
+          flows.map((flow, index) => h("div", {
+            key: flow.id,
+            className: "flow-order-item"
+          },
+            h("div", {
+              className: "flow-order-name",
+              title: flow.name
+            }, flow.name, flow.id === activeFlowId ? h("span", { className: "tab-version formal" }, "目前") : null),
+            h("div", { className: "toolbar" },
+              h("button", { type: "button", disabled: index === 0, onClick: () => moveFlow(flow.id, "first") }, "置頂"),
+              h("button", { type: "button", disabled: index === 0, onClick: () => moveFlow(flow.id, "up") }, "上移"),
+              h("button", { type: "button", disabled: index === flows.length - 1, onClick: () => moveFlow(flow.id, "down") }, "下移"),
+              h("button", { type: "button", disabled: index === flows.length - 1, onClick: () => moveFlow(flow.id, "last") }, "置底")
+            )
+          ))
+        )
+      );
+    }
+
+    function renderDocPanel(doc, updateDoc, activeFlow, updateFlowVersion) {
+      return h("details", { className: "panel", open: true },
+        h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "目前泳道圖描述"), h("span", null, "▸"))),
+        h("div", { className: "panel-body" },
+          h("p", { className: "hint" }, "此區只描述上方目前選取的泳道圖；流程問題、待確認與補充說明請寫在右側備註節點。"),
+          inputField("泳道圖標題", "featureName", doc.featureName, (value) => updateDoc("featureName", value)),
+          selectField("目前泳道圖版本", activeFlow.version || "非正式", flowVersions, updateFlowVersion),
+          textField("流程背景", doc.background, (value) => updateDoc("background", value)),
+          textField("本圖包含", doc.includeScope, (value) => updateDoc("includeScope", value)),
+          textField("本圖不包含", doc.excludeScope, (value) => updateDoc("excludeScope", value))
+        )
+      );
+    }
+
+    function renderNodePanel(props) {
+      const { activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes } = props;
+      return h("details", { className: "panel", open: true },
+        h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "節點 / 箭頭編輯"), h("span", null, "▸"))),
+        h("div", { className: "panel-body" },
+          inputField("目前流程圖名稱", "flowName", activeFlow.name, updateFlowName),
+          selectedEdge
+            ? renderEdgeEditor(selectedEdge, activeFlow.nodes, updateEdge, updateEdgeFields, deleteSelectedEdge)
+            : renderSelectedNodeEditor(selectedNode, activeFlow.nodes, activeHiddenLanes, activeCustomLaneGroups, updateNodeData, deleteLane, addNodeToFlow, addNoteToFlow, deleteSelectedNode, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes)
+        )
+      );
+    }
+
+    function renderSelectedNodeEditor(selectedNode, flowNodes, hiddenLanes, customLaneGroups, updateNodeData, deleteLane, addNodeToFlow, addNoteToFlow, deleteSelectedNode, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes) {
+      if (!selectedNode) {
+        return h(React.Fragment, null,
+          h("p", { className: "hint" }, "目前沒有選取節點。"),
+          h("div", { className: "toolbar" },
+            h("button", { type: "button", onClick: addNodeToFlow }, "新增節點"),
+            h("button", { type: "button", onClick: addNoteToFlow }, "新增備註")
+          )
+        );
+      }
+      if (isNoteNode(selectedNode)) {
+        return h(React.Fragment, null,
+          h("p", { className: "hint" }, `預設建議高度：${estimateNoteHeight(selectedNode.data)}px；高度可自行調整。`),
+          inputField("備註代號", "noteId", selectedNode.id, () => {}, true),
+          inputField("備註標題", "noteTitle", selectedNode.data.title, (value) => updateNodeData("title", value)),
+          numberField("高度", selectedNode.data.height || defaultNoteHeight, minNoteHeight, canvasHeight - 120, (value) => updateNodeData("height", value)),
+          textField("備註內容", selectedNode.data.desc, (value) => updateNodeData("desc", value)),
+          h("p", { className: "hint" }, "備註固定在最右側備註欄，不參與起點、終點與箭頭連線。寬度自動套用備註欄最大寬度；可上下拖曳與調整高度。"),
+          h("div", { className: "toolbar" },
+            h("button", { type: "button", className: "primary", onClick: addNoteToFlow }, "新增備註"),
+            h("button", { type: "button", onClick: addNodeToFlow }, "新增節點"),
+            h("button", { type: "button", className: "danger", onClick: deleteSelectedNode }, "刪除備註")
+          )
+        );
+      }
+      return h(React.Fragment, null,
+        (() => {
+          const suggestedHeight = estimateNodeHeight(selectedNode.data);
+          return h("p", { className: "hint" }, `預設建議高度：${suggestedHeight}px；高度可自行調整。`);
+        })(),
+        h("div", { className: "mini-grid" },
+          inputField("節點代號", "nodeId", selectedNode.id, () => {}, true),
+          selectField("節點型態", selectedNode.data.kind, ["start", "task", "decision", "form", "exception", "end"], (value) => updateNodeData("kind", value), kindLabel)
+        ),
+        inputField("節點名稱", "nodeTitle", selectedNode.data.title, (value) => updateNodeData("title", value)),
+        h(LaneSelectField, {
+          value: selectedNode.data.lane,
+          flowNodes,
+          hiddenLanes,
+          customLaneGroups,
+          onChange: (value) => updateNodeData("lane", value),
+          onDelete: deleteLane
+        }),
+        h("div", { className: "mini-grid" },
+          numberField("寬度", selectedNode.data.width || defaultNodeWidth, minNodeWidth, maxNodeWidth, (value) => updateNodeData("width", value)),
+          numberField("高度", selectedNode.data.height || defaultNodeHeight, minNodeHeight, maxNodeHeight, (value) => updateNodeData("height", value))
+        ),
+        textField("節點說明", selectedNode.data.desc, (value) => updateNodeData("desc", value)),
+        textField("流程限制", selectedNode.data.constraint, (value) => updateNodeData("constraint", value)),
+        h("div", { className: "toolbar" },
+          h("button", { type: "button", className: "primary", onClick: addNodeToFlow }, "新增節點"),
+          h("button", { type: "button", onClick: addNoteToFlow }, "新增備註"),
+          h("button", { type: "button", className: "danger", onClick: deleteSelectedNode }, "刪除節點")
+        ),
+        h("div", { className: "toolbar", style: { marginTop: "10px" } },
+          !connectSourceId
+            ? h("button", { type: "button", onClick: () => { setConnectSourceId(selectedNode.id); setConnectTargetId(""); } }, "設為箭頭起點")
+            : connectSourceId === selectedNode.id
+              ? h("span", { className: "tag ok" }, `起點：${connectSourceId}`)
+              : h("button", { type: "button", className: "primary", onClick: () => { connectNodes(connectSourceId, selectedNode.id); setConnectSourceId(""); } }, `${connectSourceId} -> ${selectedNode.id}`),
+          !connectTargetId
+            ? h("button", { type: "button", onClick: () => { setConnectTargetId(selectedNode.id); setConnectSourceId(""); } }, "設為箭頭終點")
+            : connectTargetId === selectedNode.id
+              ? h("span", { className: "tag ok" }, `終點：${connectTargetId}`)
+              : h("button", { type: "button", className: "primary", onClick: () => { connectNodes(selectedNode.id, connectTargetId); setConnectTargetId(""); } }, `${selectedNode.id} -> ${connectTargetId}`),
+          connectSourceId || connectTargetId ? h("button", { type: "button", onClick: () => { setConnectSourceId(""); setConnectTargetId(""); } }, "取消接線") : null
+        ),
+        h("p", { className: "hint", style: { marginTop: "10px" } }, "接線有三種：從節點連接點拖到另一個連接點；先設為箭頭起點再點終點；或先設為箭頭終點再點起點。箭頭方向可在箭頭編輯區再改。")
+      );
+    }
+
+    function LaneSelectField({ value, flowNodes, hiddenLanes = [], customLaneGroups = {}, onChange, onDelete }) {
+      const [open, setOpen] = React.useState(false);
+      const selectedLane = normalizeLane(value);
+      const options = getLaneOptions(flowNodes, selectedLane, hiddenLanes);
+      const addLane = () => {
+        const groupName = window.prompt("新增泳道分類");
+        if (groupName === null || !String(groupName).trim()) return;
+        const laneName = window.prompt("新增泳道名稱");
+        if (laneName === null || !String(laneName).trim()) return;
+        const normalized = normalizeLane(laneName);
+        if (normalized && normalized !== noteLaneName) {
+          onChange({ lane: normalized, group: String(groupName).trim() });
+          setOpen(false);
+        }
+      };
+      return h("div", { className: "field lane-select" },
+        h("label", null, "所屬泳道"),
+        h("button", {
+          type: "button",
+          className: "lane-select-button",
+          onClick: () => setOpen((current) => !current)
+        },
+          h("span", null, getLaneOptionLabel(selectedLane, customLaneGroups)),
+          h("span", null, open ? "▴" : "▾")
+        ),
+        open ? h("div", { className: "lane-select-menu" },
+          options.map((lane) => h("div", { key: lane, className: "lane-select-row" },
+            h("button", {
+              type: "button",
+              className: `lane-select-choice ${lane === selectedLane ? "active" : ""}`,
+              onClick: () => {
+                onChange(lane);
+                setOpen(false);
+              }
+            }, getLaneOptionLabel(lane, customLaneGroups)),
+            h("button", {
+              type: "button",
+              className: "lane-delete",
+              title: `刪除泳道：${lane}`,
+              onClick: (event) => {
+                event.stopPropagation();
+                onDelete(lane);
+                setOpen(false);
+              }
+            }, "×")
+          )),
+          h("button", {
+            type: "button",
+            className: "lane-add",
+            onClick: addLane
+          }, "＋新增泳道...")
+        ) : null
+      );
+    }
+
+    function renderEdgeEditor(selectedEdge, flowNodes, updateEdge, updateEdgeFields, deleteSelectedEdge) {
+      const nodeIds = flowNodes.filter((item) => !isNoteNode(item)).map((item) => item.id);
+      const sourceHandle = normalizeHandleId(selectedEdge.sourceHandle, "right-2", "source");
+      const targetHandle = normalizeHandleId(selectedEdge.targetHandle, "left-2", "target");
+      return h(React.Fragment, null,
+        h("p", { className: "hint" }, `箭頭：${selectedEdge.source} -> ${selectedEdge.target}`),
+        h("div", { className: "mini-grid" },
+          selectField("起點節點", selectedEdge.source, nodeIds, (value) => updateEdgeFields({
+            source: value,
+            sourceHandle: value === selectedEdge.source ? sourceHandle : "right-2"
+          })),
+          selectField("終點節點", selectedEdge.target, nodeIds, (value) => updateEdgeFields({
+            target: value,
+            targetHandle: value === selectedEdge.target ? targetHandle : "left-2"
+          }))
+        ),
+        h("div", { className: "mini-grid" },
+          selectField("起點連接處", sourceHandle, sourceHandleOptions, (value) => updateEdgeFields({ sourceHandle: value }), edgeHandleLabels),
+          selectField("終點連接處", targetHandle, targetHandleOptions, (value) => updateEdgeFields({ targetHandle: value }), edgeHandleLabels)
+        ),
+        h("p", { className: "hint" }, "每個節點有 12 個連接點，每邊 3 個；所有線都可改起訖點與連接處。同一連接點只能接一條線，若選到已占用點，系統會自動改用同節點其他可用點。"),
+        inputField("箭頭說明", "edgeLabel", selectedEdge.label || "", (value) => updateEdge("label", value)),
+        selectField("箭頭樣式", selectedEdge.type || "step", ["step", "smoothstep", "straight", "default"], (value) => updateEdge("type", value)),
+        h("div", { className: "toolbar" },
+          h("button", {
+            type: "button",
+            onClick: () => updateEdgeFields({
+              source: selectedEdge.target,
+              target: selectedEdge.source,
+              sourceHandle: normalizeHandleId(targetHandle, "right-2", "source"),
+              targetHandle: normalizeHandleId(sourceHandle, "left-2", "target")
+            })
+          }, "反轉方向"),
+          h("button", { type: "button", className: "danger", onClick: deleteSelectedEdge }, "刪除箭頭")
+        )
+      );
+    }
+
+    function inputField(label, id, value, onChange, readOnly = false) {
+      return h("div", { className: "field" },
+        h("label", { htmlFor: id }, label),
+        h("input", { id, value: value || "", readOnly, onChange: (event) => onChange(event.target.value) })
+      );
+    }
+
+    function numberField(label, value, min, max, onChange) {
+      return h("div", { className: "field" },
+        h("label", null, label),
+        h("input", {
+          type: "number",
+          min,
+          max,
+          step: 8,
+          value: value || "",
+          onChange: (event) => onChange(event.target.value)
+        })
+      );
+    }
+
+    function textField(label, value, onChange) {
+      return h("div", { className: "field" },
+        h("label", null, label),
+        h("textarea", { value: value || "", onChange: (event) => onChange(event.target.value) })
+      );
+    }
+
+    function selectField(label, value, options, onChange, labels = null) {
+      return h("div", { className: "field" },
+        h("label", null, label),
+        h("select", { value, onChange: (event) => onChange(event.target.value) },
+          options.map((option) => h("option", { key: option, value: option }, labels ? labels[option] : option))
+        )
+      );
+    }
+
+    function makeMarkdown(doc, flows) {
+      const documentVersion = getDocumentVersion(flows);
+      const diagramSections = flows.map((flow) => {
+        const flowDoc = getFlowDoc(flow);
+        const flowLaneGroups = flowDoc.customLaneGroups || {};
+        const processNodes = flow.nodes.filter((item) => !isNoteNode(item));
+        const noteNodes = flow.nodes.filter((item) => isNoteNode(item));
+        const flowLines = processNodes.map((item, stepIndex) => {
+          const outgoing = flow.edges.filter((edgeItem) => edgeItem.source === item.id);
+          const edgeText = outgoing.length ? outgoing.map((edgeItem) => `${edgeItem.label || "下一步"} -> ${edgeItem.target}`).join("；") : "無下一步";
+          return `${stepIndex + 1}. [${getLaneGroupMap(flowLaneGroups)[item.data.lane] || getLaneGroupName(item.data.lane)} / ${item.data.lane}] ${item.id} ${item.data.title}（${kindLabel[item.data.kind]}）
+   - 節點說明：${item.data.desc || "待補"}
+   - 流程限制：${item.data.constraint || "無"}
+   - 下一步：${edgeText}`;
+        }).join("\n");
+        const edgeLines = flow.edges.map((item) => `- ${item.source} -> ${item.target}: ${item.label || "下一步"}`).join("\n") || "- 尚未設定";
+        const noteLines = noteNodes.map((item) => `- ${item.data.title || item.id}：${item.data.desc || "待補"}`).join("\n") || "- 無";
+        return `## ${flowDoc.featureName || flow.name}
+
+- 流程圖名稱：${flow.name}
+- 泳道圖版本：${flow.version || "非正式"}
+
+### 流程背景
+${flowDoc.background || "待補"}
+
+### 本圖範圍
+- 本次包含：${flowDoc.includeScope || "待補"}
+- 本次不包含：${flowDoc.excludeScope || "待補"}
+
+### 節點與流程
+${flowLines}
+
+### 箭頭連線
+${edgeLines}
+
+### 流程備註
+${noteLines}`;
+      }).join("\n\n");
+
+      return `# ${doc.featureName || "單功能泳道圖"} 彙整
+
+## 泳道圖狀態
+- 狀態：${documentVersion}
+- 來源：tool-swimlane-diagram
+- 下一步：${documentVersion === "正式" ? "可作為流程設計參考" : "完成各泳道圖確認後，將圖版本標為正式"}
+
+## 多流程泳道圖
+${diagramSections}
+
+## 流程交接重點
+- 本頁是泳道圖彙整，重點是流程圖、節點、連線與備註。
+- 泳道採已確認標準：人物與系統兩層，且只顯示該流程用到的泳道。
+- 節點可在所屬泳道內自由排列；若要跨泳道，需明確修改節點的所屬泳道。
+- 箭頭連線代表流程順序與分支說明，終點節點代表該張流程圖的明確結束。
+- 待確認、流程限制與補充說明以各泳道圖備註節點為準。
+
+## 待確認
+- 是否採用 React Flow 作為泳道圖編輯器。
+- 是否把目前圖形資料儲存成結構化 JSON，作為後續工具資料來源。
+`;
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+      }
     }
 
     function download(filename, content, type) {
@@ -768,67 +3795,17 @@
       const link = document.createElement("a");
       link.href = url;
       link.download = filename;
+      document.body.appendChild(link);
       link.click();
+      link.remove();
       URL.revokeObjectURL(url);
     }
 
-    function typeLabel(type) {
-      return { start: "起點", task: "工作", decision: "判斷", end: "終點" }[type] || "工作";
-    }
-
-    function escapeHtml(value) {
-      return String(value).replace(/[&<>"']/g, (char) => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      }[char]));
-    }
-
-    function escapeAttr(value) {
-      return escapeHtml(value).replace(/`/g, "&#96;");
-    }
-
-    el("docTitle").addEventListener("input", (event) => { state.title = event.target.value; save(); });
-    el("docSummary").addEventListener("input", (event) => { state.summary = event.target.value; save(); });
-    el("laneText").addEventListener("change", (event) => {
-      const nextLanes = event.target.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
-      if (!nextLanes.length) return render();
-      state.lanes = nextLanes;
-      state.nodes = state.nodes.map((node) => nextLanes.includes(node.lane) ? node : { ...node, lane: nextLanes[0] });
-      save();
-      render();
-    });
-    el("nodeLane").addEventListener("change", (event) => updateSelected({ lane: event.target.value }));
-    el("nodeType").addEventListener("change", (event) => updateSelected({ type: event.target.value }));
-    el("nodeTitle").addEventListener("input", (event) => updateSelected({ title: event.target.value }));
-    el("nodeDesc").addEventListener("input", (event) => updateSelected({ desc: event.target.value }));
-    el("nodeY").addEventListener("change", (event) => updateSelected({ y: Number(event.target.value) || 100 }));
-    el("nodeHeight").addEventListener("change", (event) => updateSelected({ height: Number(event.target.value) || 112 }));
-    el("addNode").addEventListener("click", addNode);
-    el("connectNodes").addEventListener("click", () => {
-      el("edgeSource").value = selectedId;
-      el("saveStatus").textContent = "請在左側選擇終點並新增連線";
-    });
-    el("addEdge").addEventListener("click", addEdge);
-    el("deleteNode").addEventListener("click", deleteNode);
-    el("clearEdges").addEventListener("click", () => { state.edges = []; save(); render(); });
-    el("exportJson").addEventListener("click", exportJson);
-    el("importJson").addEventListener("click", () => el("fileInput").click());
-    el("fileInput").addEventListener("change", (event) => {
-      const file = event.target.files?.[0];
-      if (file) importJson(file);
-      event.target.value = "";
-    });
-    el("resetSample").addEventListener("click", () => {
-      state = clone(sample);
-      selectedId = state.nodes[0]?.id || "";
-      save();
-      render();
-    });
-
-    render();
+    createRoot(document.getElementById("root")).render(h(ReactFlowProvider, null, h(App)));
   </script>
 </body>
 </html>
+
+
+
+

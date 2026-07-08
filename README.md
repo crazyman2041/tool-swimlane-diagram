@@ -1,11 +1,13 @@
-# Swimlane Diagram Tool
+# tool-swimlane-diagram
 
 一個可直接用瀏覽器開啟的單頁泳道圖工具。
+
+Developer: Jimmy C
 
 ## 功能
 
 - 新增、拖曳、編輯、刪除流程節點
-- 編輯泳道名稱與數量
+- 從節點的所屬泳道下拉選單新增自訂泳道分類與泳道名稱
 - 建立節點連線與連線文字
 - 匯出與匯入 JSON
 - 使用瀏覽器 localStorage 暫存目前編輯狀態
@@ -18,3 +20,4 @@
 
 - `index.html`：泳道圖工具
 - `sample-flow.json`：可匯入的通用範例流程
+- `LICENSE`：MIT License
