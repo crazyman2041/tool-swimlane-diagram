@@ -2490,6 +2490,7 @@
       const warnings = data.warnings || [];
       const focusClass = data.focus === "edge" ? "edge-focus" : data.focus === "related" ? "related-focus" : "";
       const isNote = data.kind === "note";
+      const isDecision = data.kind === "decision";
       return h("div", { style: { width: data.width, height: data.height } },
         h(NodeResizer, {
           isVisible: selected && !data.readonly,
@@ -2507,7 +2508,7 @@
           onMouseEnter: (event) => data.onPreviewEnter?.(id, data, event),
           onMouseLeave: () => data.onPreviewLeave?.(id)
         },
-          isNote ? null : (data.kind === "decision" ? decisionConnectionHandleDefinitions(data.width, data.height) : connectionHandleDefinitions).map((handle) =>
+          isNote ? null : (isDecision ? decisionConnectionHandleDefinitions(data.width, data.height) : connectionHandleDefinitions).map((handle) =>
             h(Handle, {
               key: handle.pointId,
               id: handle.pointId,
@@ -2517,7 +2518,7 @@
               style: handle.style
             })
           ),
-          h("div", { className: "node-meta" },
+          isDecision ? null : h("div", { className: "node-meta" },
             h("span", null,
               h("span", { className: `node-symbol ${data.kind}` }, kindSymbol[data.kind] || "作"),
               id, " · ", kindLabel[data.kind],
@@ -2526,8 +2527,8 @@
             h("span", null, isNote ? "右側備註" : data.lane)
           ),
           h("h3", { className: "node-title" }, data.title),
-          h("p", { className: "node-desc" }, data.desc),
-          data.constraint ? h("div", { className: "node-detail" }, "限制：", data.constraint) : null
+          isDecision ? null : h("p", { className: "node-desc" }, data.desc),
+          !isDecision && data.constraint ? h("div", { className: "node-detail" }, "限制：", data.constraint) : null
         )
       );
     }
