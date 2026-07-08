@@ -882,6 +882,10 @@
       cursor: default;
     }
 
+    .react-flow__node {
+      overflow: visible;
+    }
+
     .react-flow__edge-path {
       stroke-linecap: round;
       stroke-linejoin: round;
@@ -906,6 +910,8 @@
       color: var(--text);
       box-sizing: border-box;
       overflow: visible;
+      transform-origin: center center;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, padding 0.14s ease;
     }
 
     .ba-node.selected {
@@ -913,14 +919,25 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
     }
 
+    .ba-node.selected,
+    .ba-node.strong-emphasis,
+    .ba-node.edge-focus {
+      transform: scale(1.14);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22), 0 0 0 5px rgba(37, 99, 235, 0.18);
+    }
+
     .ba-node.edge-focus {
       border-color: var(--amber);
-      box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.24), 0 8px 20px rgba(15, 23, 42, 0.1);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22), 0 0 0 5px rgba(180, 83, 9, 0.28);
     }
 
     .ba-node.related-focus {
       border-color: var(--green);
       box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
+    }
+
+    .ba-node.soft-emphasis.related-focus {
+      transform: scale(1.06);
     }
 
     .ba-node.unlinked {
@@ -985,9 +1002,15 @@
       filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0.18)) drop-shadow(0 6px 18px rgba(15, 23, 42, 0.08));
     }
 
+    .ba-node.decision.selected::before,
+    .ba-node.decision.strong-emphasis::before {
+      background: var(--blue);
+      filter: drop-shadow(0 12px 28px rgba(15, 23, 42, 0.24)) drop-shadow(0 0 8px rgba(37, 99, 235, 0.28));
+    }
+
     .ba-node.decision.edge-focus::before {
       background: var(--amber);
-      filter: drop-shadow(0 0 4px rgba(180, 83, 9, 0.42)) drop-shadow(0 8px 20px rgba(15, 23, 42, 0.1));
+      filter: drop-shadow(0 12px 28px rgba(15, 23, 42, 0.24)) drop-shadow(0 0 8px rgba(180, 83, 9, 0.42));
     }
 
     .ba-node.decision.related-focus::before {
@@ -1061,6 +1084,32 @@
       margin-left: 6px;
       color: var(--red);
       font-size: 13px;
+      font-weight: 900;
+    }
+
+    .ba-node.selected .node-title,
+    .ba-node.strong-emphasis .node-title,
+    .ba-node.edge-focus .node-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #020617;
+    }
+
+    .ba-node.selected .node-desc,
+    .ba-node.strong-emphasis .node-desc,
+    .ba-node.edge-focus .node-desc {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1e293b;
+    }
+
+    .ba-node.selected .node-detail,
+    .ba-node.strong-emphasis .node-detail,
+    .ba-node.edge-focus .node-detail,
+    .ba-node.selected .node-meta,
+    .ba-node.strong-emphasis .node-meta,
+    .ba-node.edge-focus .node-meta {
+      font-size: 16px;
       font-weight: 900;
     }
 
@@ -2435,6 +2484,7 @@
     function BaNode({ id, data, selected }) {
       const warnings = data.warnings || [];
       const focusClass = data.focus === "edge" ? "edge-focus" : data.focus === "related" ? "related-focus" : "";
+      const emphasisClass = data.emphasis === "strong" ? "strong-emphasis" : data.emphasis === "soft" ? "soft-emphasis" : "";
       const isNote = data.kind === "note";
       return h("div", { style: { width: data.width, height: data.height } },
         h(NodeResizer, {
@@ -2448,7 +2498,7 @@
           onResize: (_event, params) => data.onResize?.(id, params),
           onResizeEnd: (_event, params) => data.onResizeEnd?.(id, params)
         }),
-        h("div", { className: `ba-node ${data.kind} ${selected ? "selected" : ""} ${focusClass} ${warnings.length ? "unlinked" : ""}` },
+        h("div", { className: `ba-node ${data.kind} ${selected ? "selected" : ""} ${focusClass} ${emphasisClass} ${warnings.length ? "unlinked" : ""}` },
           isNote ? null : (data.kind === "decision" ? decisionConnectionHandleDefinitions(data.width, data.height) : connectionHandleDefinitions).map((handle) =>
             h(Handle, {
               key: handle.pointId,
@@ -3146,18 +3196,23 @@
       }, [displayLaneGroups, flowWorldHeight]);
       const nodesWithWarnings = useMemo(() => nodes.map((item) => {
         const clamped = clampNodeToLane(item, visibleLanes);
-        const focus = selectedEdge && (selectedEdge.source === item.id || selectedEdge.target === item.id)
+        const isSelectedNode = selectedNodeId === item.id;
+        const isSelectedEdgeEndpoint = selectedEdge && (selectedEdge.source === item.id || selectedEdge.target === item.id);
+        const isRelatedNode = !selectedEdge && edgeEndpointNodeIds.has(item.id);
+        const focus = isSelectedEdgeEndpoint
           ? "edge"
-          : edgeEndpointNodeIds.has(item.id)
+          : isRelatedNode
             ? "related"
             : "";
+        const emphasis = isSelectedNode || isSelectedEdgeEndpoint ? "strong" : isRelatedNode ? "soft" : "";
         return {
           ...clamped,
           origin: [0, 0],
-          zIndex: 20,
+          zIndex: emphasis === "strong" ? 80 : emphasis === "soft" ? 45 : 20,
           data: {
             ...makeNodeData(clamped, edges),
             focus,
+            emphasis,
             readonly: viewMode === "present",
             onResizeStart: handleNodeResizeStart,
             onResize: handleNodeResize,
@@ -3168,13 +3223,18 @@
             height: clamped.data.height
           }
         };
-      }), [nodes, edges, visibleLanes, selectedEdge, edgeEndpointNodeIds, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
+      }), [nodes, edges, visibleLanes, selectedNodeId, selectedEdge, edgeEndpointNodeIds, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
       const displayNodes = useMemo(() => laneNodes.concat(nodesWithWarnings), [laneNodes, nodesWithWarnings]);
       const displayEdges = useMemo(() => edges.map((item) => {
         const isSelectedEdge = selectedEdgeId === item.id;
         const isHighlighted = highlightedEdgeIds.has(item.id);
         const isResizingEdge = resizingNodeId && (item.source === resizingNodeId || item.target === resizingNodeId);
         const baseEdge = item;
+        const activeLabelFontSize = isSelectedEdge
+          ? Math.round(edgeLabelFontSize * 1.36)
+          : isHighlighted
+            ? Math.round(edgeLabelFontSize * 1.2)
+            : edgeLabelFontSize;
         return {
           ...baseEdge,
           reconnectable: viewMode !== "present",
@@ -3186,11 +3246,17 @@
             strokeDasharray: isResizingEdge ? "8 7" : undefined
           },
           markerEnd: { ...(baseEdge.markerEnd || { type: "arrowclosed" }), color: isSelectedEdge ? "#b45309" : isHighlighted ? "#047857" : "#1d4ed8" },
-          labelStyle: { ...(baseEdge.labelStyle || {}), fontSize: edgeLabelFontSize, fontWeight: 900, fill: "#0f172a" },
+          labelStyle: {
+            ...(baseEdge.labelStyle || {}),
+            fontSize: activeLabelFontSize,
+            fontWeight: 900,
+            fill: isSelectedEdge ? "#92400e" : isHighlighted ? "#065f46" : "#0f172a",
+            strokeWidth: isSelectedEdge || isHighlighted ? 11 : 8
+          },
           pathOptions: baseEdge.type === "cleanStep"
             ? {}
             : { ...(baseEdge.pathOptions || {}), offset: Math.max(Number(baseEdge.pathOptions?.offset) || 0, edgeTextClearance) },
-          labelBgPadding: baseEdge.labelBgPadding || [18, 10],
+          labelBgPadding: isSelectedEdge || isHighlighted ? [24, 14] : baseEdge.labelBgPadding || [18, 10],
           labelBgBorderRadius: baseEdge.labelBgBorderRadius || 8,
           labelBgStyle: { fill: "#fff", stroke: isSelectedEdge ? "#b45309" : isHighlighted ? "#047857" : "#93c5fd" }
         };
