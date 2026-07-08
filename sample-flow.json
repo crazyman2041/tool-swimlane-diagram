@@ -1,0 +1,89 @@
+{
+  "title": "請假申請流程",
+  "summary": "員工送出請假申請，主管審核後由人資登記，系統通知申請結果。",
+  "lanes": [
+    "申請人",
+    "主管",
+    "人資",
+    "通知系統"
+  ],
+  "nodes": [
+    {
+      "id": "S1",
+      "lane": "申請人",
+      "type": "start",
+      "y": 92,
+      "height": 112,
+      "title": "提出請假申請",
+      "desc": "填寫日期、假別與原因。"
+    },
+    {
+      "id": "S2",
+      "lane": "主管",
+      "type": "decision",
+      "y": 252,
+      "height": 128,
+      "title": "主管審核",
+      "desc": "確認排班、人力與申請資料。"
+    },
+    {
+      "id": "S3",
+      "lane": "申請人",
+      "type": "task",
+      "y": 420,
+      "height": 112,
+      "title": "補充或修正資料",
+      "desc": "資料不足時，依主管要求補件。"
+    },
+    {
+      "id": "S4",
+      "lane": "人資",
+      "type": "task",
+      "y": 420,
+      "height": 112,
+      "title": "登記假勤",
+      "desc": "審核通過後登記假勤紀錄。"
+    },
+    {
+      "id": "S5",
+      "lane": "通知系統",
+      "type": "end",
+      "y": 588,
+      "height": 112,
+      "title": "通知結果",
+      "desc": "通知申請人審核結果。"
+    }
+  ],
+  "edges": [
+    {
+      "id": "E1",
+      "source": "S1",
+      "target": "S2",
+      "label": "送審"
+    },
+    {
+      "id": "E2",
+      "source": "S2",
+      "target": "S3",
+      "label": "退回補件"
+    },
+    {
+      "id": "E3",
+      "source": "S3",
+      "target": "S2",
+      "label": "重新送審"
+    },
+    {
+      "id": "E4",
+      "source": "S2",
+      "target": "S4",
+      "label": "核准"
+    },
+    {
+      "id": "E5",
+      "source": "S4",
+      "target": "S5",
+      "label": "完成登記"
+    }
+  ]
+}

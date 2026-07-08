@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Swimlane Diagram Tool</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --line: #d9e1ec;
+      --line-strong: #aab7c8;
+      --text: #172033;
+      --muted: #637083;
+      --blue: #2563eb;
+      --green: #047857;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --shadow: 0 12px 32px rgba(15, 23, 42, 0.09);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    button, input, textarea, select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    button:hover { border-color: var(--line-strong); }
+    button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    button.danger { border-color: #fecaca; color: var(--red); }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea { min-height: 88px; resize: vertical; }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 64px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+      min-height: calc(100vh - 65px);
+    }
+
+    aside {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      padding: 14px;
+      overflow: auto;
+      max-height: calc(100vh - 65px);
+    }
+
+    main {
+      min-width: 0;
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .section {
+      border-bottom: 1px solid var(--line);
+      padding: 0 0 14px;
+      margin: 0 0 14px;
+    }
+
+    .section:last-child {
+      border-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .board-wrap {
+      position: relative;
+      width: max-content;
+      min-width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .board {
+      position: relative;
+      min-height: 760px;
+      background: #fff;
+    }
+
+    .lanes {
+      display: grid;
+      height: 100%;
+      min-height: 760px;
+    }
+
+    .lane {
+      border-right: 1px solid var(--line);
+      background: linear-gradient(#fff, #fff), var(--panel-soft);
+      position: relative;
+    }
+
+    .lane:nth-child(even) {
+      background: #f9fbfe;
+    }
+
+    .lane:last-child { border-right: 0; }
+
+    .lane-title {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line);
+      background: rgba(248, 250, 252, 0.95);
+      font-weight: 900;
+      color: #334155;
+      backdrop-filter: blur(8px);
+    }
+
+    .connections {
+      position: absolute;
+      inset: 48px 0 0;
+      width: 100%;
+      height: calc(100% - 48px);
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .node {
+      position: absolute;
+      z-index: 10;
+      width: 230px;
+      min-height: 108px;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      padding: 10px;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .node:active { cursor: grabbing; }
+    .node.selected { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.16); }
+    .node.start { border-color: #86efac; }
+    .node.task { border-color: #93c5fd; }
+    .node.decision { border-color: #fbbf24; }
+    .node.end { border-color: #c4b5fd; }
+
+    .node-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .node-id {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .node-type {
+      border-radius: 999px;
+      padding: 2px 7px;
+      background: var(--panel-soft);
+      color: #475569;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .node-title {
+      font-size: 16px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .node-desc {
+      color: #475569;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .edge-label {
+      position: absolute;
+      z-index: 9;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #334155;
+      font-size: 12px;
+      font-weight: 900;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .list {
+      display: grid;
+      gap: 6px;
+      max-height: 220px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .list button {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 8px;
+      text-align: left;
+      white-space: normal;
+      padding: 8px;
+    }
+
+    .list button.active {
+      border-color: var(--blue);
+      background: #eff6ff;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hidden-file {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Swimlane Diagram Tool</h1>
+    <div class="toolbar">
+      <span class="status" id="saveStatus">Ready</span>
+      <button type="button" id="addNode">新增節點</button>
+      <button type="button" id="connectNodes">連線</button>
+      <button type="button" id="exportJson" class="primary">匯出 JSON</button>
+      <button type="button" id="importJson">匯入 JSON</button>
+      <button type="button" id="resetSample">還原範例</button>
+      <input id="fileInput" class="hidden-file" type="file" accept="application/json,.json">
+    </div>
+  </header>
+
+  <div class="app">
+    <aside>
+      <section class="section">
+        <h2>文件</h2>
+        <div class="form-grid">
+          <label>流程名稱
+            <input id="docTitle">
+          </label>
+          <label>流程說明
+            <textarea id="docSummary"></textarea>
+          </label>
+          <label>泳道
+            <textarea id="laneText"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>節點</h2>
+        <div class="list" id="nodeList"></div>
+      </section>
+
+      <section class="section">
+        <h2>編輯選取節點</h2>
+        <div class="form-grid">
+          <label>節點 ID
+            <input id="nodeId" readonly>
+          </label>
+          <label>泳道
+            <select id="nodeLane"></select>
+          </label>
+          <label>類型
+            <select id="nodeType">
+              <option value="start">起點</option>
+              <option value="task">工作</option>
+              <option value="decision">判斷</option>
+              <option value="end">終點</option>
+            </select>
+          </label>
+          <label>標題
+            <input id="nodeTitle">
+          </label>
+          <label>說明
+            <textarea id="nodeDesc"></textarea>
+          </label>
+          <div class="split">
+            <label>Y 位置
+              <input id="nodeY" type="number" min="80" step="10">
+            </label>
+            <label>高度
+              <input id="nodeHeight" type="number" min="90" step="10">
+            </label>
+          </div>
+          <button type="button" id="deleteNode" class="danger">刪除節點</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>連線</h2>
+        <div class="form-grid">
+          <label>起點
+            <select id="edgeSource"></select>
+          </label>
+          <label>終點
+            <select id="edgeTarget"></select>
+          </label>
+          <label>文字
+            <input id="edgeLabel" value="下一步">
+          </label>
+          <button type="button" id="addEdge">新增連線</button>
+          <button type="button" id="clearEdges" class="danger">清除所有連線</button>
+        </div>
+      </section>
+
+      <p class="small">資料只儲存在此瀏覽器 localStorage；匯出 JSON 可自行保存或版本控管。</p>
+    </aside>
+
+    <main>
+      <div class="board-wrap">
+        <div class="board" id="board">
+          <div class="lanes" id="lanes"></div>
+          <svg class="connections" id="connections"></svg>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "public.swimlane.diagram.tool.v1";
+    const laneWidth = 280;
+    const headerHeight = 48;
+    const nodeWidth = 230;
+    const sample = {
+      title: "請假申請流程",
+      summary: "員工送出請假申請，主管審核後由人資登記，系統通知申請結果。",
+      lanes: ["申請人", "主管", "人資", "通知系統"],
+      nodes: [
+        { id: "S1", lane: "申請人", type: "start", y: 92, height: 112, title: "提出請假申請", desc: "填寫日期、假別與原因。" },
+        { id: "S2", lane: "主管", type: "decision", y: 252, height: 128, title: "主管審核", desc: "確認排班、人力與申請資料。" },
+        { id: "S3", lane: "申請人", type: "task", y: 420, height: 112, title: "補充或修正資料", desc: "資料不足時，依主管要求補件。" },
+        { id: "S4", lane: "人資", type: "task", y: 420, height: 112, title: "登記假勤", desc: "審核通過後登記假勤紀錄。" },
+        { id: "S5", lane: "通知系統", type: "end", y: 588, height: 112, title: "通知結果", desc: "通知申請人審核結果。" }
+      ],
+      edges: [
+        { id: "E1", source: "S1", target: "S2", label: "送審" },
+        { id: "E2", source: "S2", target: "S3", label: "退回補件" },
+        { id: "E3", source: "S3", target: "S2", label: "重新送審" },
+        { id: "E4", source: "S2", target: "S4", label: "核准" },
+        { id: "E5", source: "S4", target: "S5", label: "完成登記" }
+      ]
+    };
+
+    let state = loadState();
+    let selectedId = state.nodes[0]?.id || "";
+    let dragState = null;
+
+    const el = (id) => document.getElementById(id);
+    const board = el("board");
+    const lanesEl = el("lanes");
+    const connectionsEl = el("connections");
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function loadState() {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        if (!raw) return clone(sample);
+        return normalize(JSON.parse(raw));
+      } catch {
+        return clone(sample);
+      }
+    }
+
+    function normalize(input) {
+      const lanes = Array.isArray(input.lanes) && input.lanes.length ? input.lanes.map(String) : clone(sample.lanes);
+      const nodes = Array.isArray(input.nodes) ? input.nodes.map((node, index) => ({
+        id: String(node.id || `S${index + 1}`),
+        lane: lanes.includes(node.lane) ? node.lane : lanes[0],
+        type: ["start", "task", "decision", "end"].includes(node.type) ? node.type : "task",
+        y: Math.max(80, Number(node.y) || 100 + index * 150),
+        height: Math.max(90, Number(node.height) || 112),
+        title: String(node.title || "未命名節點"),
+        desc: String(node.desc || "")
+      })) : clone(sample.nodes);
+      const ids = new Set(nodes.map((node) => node.id));
+      const edges = Array.isArray(input.edges) ? input.edges
+        .filter((edge) => ids.has(String(edge.source)) && ids.has(String(edge.target)))
+        .map((edge, index) => ({
+          id: String(edge.id || `E${index + 1}`),
+          source: String(edge.source),
+          target: String(edge.target),
+          label: String(edge.label || "下一步")
+        })) : clone(sample.edges);
+      return {
+        title: String(input.title || "未命名流程"),
+        summary: String(input.summary || ""),
+        lanes,
+        nodes,
+        edges
+      };
+    }
+
+    function save() {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      el("saveStatus").textContent = `Saved ${new Date().toLocaleTimeString("zh-TW", { hour12: false })}`;
+    }
+
+    function laneIndex(name) {
+      return Math.max(0, state.lanes.indexOf(name));
+    }
+
+    function nodePosition(node) {
+      return {
+        left: laneIndex(node.lane) * laneWidth + Math.round((laneWidth - nodeWidth) / 2),
+        top: headerHeight + node.y
+      };
+    }
+
+    function boardHeight() {
+      const maxY = state.nodes.reduce((max, node) => Math.max(max, node.y + node.height + 160), 760);
+      return Math.max(760, maxY);
+    }
+
+    function render() {
+      state = normalize(state);
+      if (!state.nodes.some((node) => node.id === selectedId)) selectedId = state.nodes[0]?.id || "";
+      const width = Math.max(state.lanes.length * laneWidth, 900);
+      const height = boardHeight();
+      board.style.width = `${width}px`;
+      board.style.height = `${height}px`;
+      lanesEl.style.gridTemplateColumns = state.lanes.map(() => `${laneWidth}px`).join(" ");
+      lanesEl.style.width = `${state.lanes.length * laneWidth}px`;
+      lanesEl.style.minHeight = `${height}px`;
+      lanesEl.innerHTML = state.lanes.map((lane) => `<div class="lane"><div class="lane-title">${escapeHtml(lane)}</div></div>`).join("");
+      renderNodes();
+      renderEdges();
+      syncForm();
+    }
+
+    function renderNodes() {
+      [...board.querySelectorAll(".node, .edge-label")].forEach((item) => item.remove());
+      for (const node of state.nodes) {
+        const pos = nodePosition(node);
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = `node ${node.type}${node.id === selectedId ? " selected" : ""}`;
+        item.dataset.id = node.id;
+        item.style.left = `${pos.left}px`;
+        item.style.top = `${pos.top}px`;
+        item.style.height = `${node.height}px`;
+        item.innerHTML = `
+          <div class="node-head">
+            <span class="node-id">${escapeHtml(node.id)}</span>
+            <span class="node-type">${typeLabel(node.type)}</span>
+          </div>
+          <div class="node-title">${escapeHtml(node.title)}</div>
+          <div class="node-desc">${escapeHtml(node.desc)}</div>
+        `;
+        item.addEventListener("click", () => {
+          selectedId = node.id;
+          render();
+        });
+        item.addEventListener("pointerdown", startDrag);
+        board.appendChild(item);
+      }
+    }
+
+    function renderEdges() {
+      connectionsEl.setAttribute("width", String(board.offsetWidth));
+      connectionsEl.setAttribute("height", String(board.offsetHeight - headerHeight));
+      connectionsEl.innerHTML = `
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"></path>
+          </marker>
+        </defs>
+      `;
+      for (const edge of state.edges) {
+        const source = state.nodes.find((node) => node.id === edge.source);
+        const target = state.nodes.find((node) => node.id === edge.target);
+        if (!source || !target) continue;
+        const sourcePos = nodePosition(source);
+        const targetPos = nodePosition(target);
+        const x1 = sourcePos.left + nodeWidth;
+        const y1 = source.y + source.height / 2;
+        const x2 = targetPos.left;
+        const y2 = target.y + target.height / 2;
+        const midX = Math.round((x1 + x2) / 2);
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "#475569");
+        path.setAttribute("stroke-width", "2");
+        path.setAttribute("marker-end", "url(#arrow)");
+        connectionsEl.appendChild(path);
+        const label = document.createElement("div");
+        label.className = "edge-label";
+        label.style.left = `${midX}px`;
+        label.style.top = `${headerHeight + Math.round((y1 + y2) / 2)}px`;
+        label.textContent = edge.label;
+        board.appendChild(label);
+      }
+    }
+
+    function syncForm() {
+      el("docTitle").value = state.title;
+      el("docSummary").value = state.summary;
+      el("laneText").value = state.lanes.join("\\n");
+      const selected = state.nodes.find((node) => node.id === selectedId);
+      el("nodeList").innerHTML = state.nodes.map((node) => `
+        <button type="button" data-id="${escapeAttr(node.id)}" class="${node.id === selectedId ? "active" : ""}">
+          <strong>${escapeHtml(node.id)}</strong>
+          <span>${escapeHtml(node.title)}</span>
+        </button>
+      `).join("");
+      el("nodeList").querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectedId = button.dataset.id;
+          render();
+        });
+      });
+      fillSelect(el("nodeLane"), state.lanes, selected?.lane);
+      fillSelect(el("edgeSource"), state.nodes.map((node) => node.id), selectedId);
+      fillSelect(el("edgeTarget"), state.nodes.map((node) => node.id), state.nodes.find((node) => node.id !== selectedId)?.id || selectedId);
+      el("nodeId").value = selected?.id || "";
+      el("nodeType").value = selected?.type || "task";
+      el("nodeTitle").value = selected?.title || "";
+      el("nodeDesc").value = selected?.desc || "";
+      el("nodeY").value = selected?.y || 100;
+      el("nodeHeight").value = selected?.height || 112;
+    }
+
+    function fillSelect(select, values, selected) {
+      select.innerHTML = values.map((value) => `<option value="${escapeAttr(value)}">${escapeHtml(value)}</option>`).join("");
+      select.value = selected || values[0] || "";
+    }
+
+    function updateSelected(patch) {
+      state.nodes = state.nodes.map((node) => node.id === selectedId ? { ...node, ...patch } : node);
+      save();
+      render();
+    }
+
+    function startDrag(event) {
+      const id = event.currentTarget.dataset.id;
+      const node = state.nodes.find((item) => item.id === id);
+      if (!node) return;
+      selectedId = id;
+      const pos = nodePosition(node);
+      dragState = {
+        id,
+        startX: event.clientX,
+        startY: event.clientY,
+        left: pos.left,
+        y: node.y
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      window.addEventListener("pointermove", moveDrag);
+      window.addEventListener("pointerup", stopDrag, { once: true });
+    }
+
+    function moveDrag(event) {
+      if (!dragState) return;
+      const dx = event.clientX - dragState.startX;
+      const dy = event.clientY - dragState.startY;
+      const lane = state.lanes[Math.max(0, Math.min(state.lanes.length - 1, Math.round((dragState.left + dx) / laneWidth)))] || state.lanes[0];
+      const y = Math.max(80, Math.round((dragState.y + dy) / 10) * 10);
+      state.nodes = state.nodes.map((node) => node.id === dragState.id ? { ...node, lane, y } : node);
+      render();
+    }
+
+    function stopDrag() {
+      if (!dragState) return;
+      dragState = null;
+      window.removeEventListener("pointermove", moveDrag);
+      save();
+      render();
+    }
+
+    function addNode() {
+      const nextNumber = state.nodes.length + 1;
+      const node = {
+        id: uniqueNodeId(`S${nextNumber}`),
+        lane: state.lanes[0],
+        type: "task",
+        y: 120 + state.nodes.length * 40,
+        height: 112,
+        title: "新增節點",
+        desc: "填寫此節點的流程說明。"
+      };
+      state.nodes.push(node);
+      selectedId = node.id;
+      save();
+      render();
+    }
+
+    function uniqueNodeId(base) {
+      const existing = new Set(state.nodes.map((node) => node.id));
+      if (!existing.has(base)) return base;
+      let index = 2;
+      while (existing.has(`${base}-${index}`)) index += 1;
+      return `${base}-${index}`;
+    }
+
+    function addEdge() {
+      const source = el("edgeSource").value;
+      const target = el("edgeTarget").value;
+      if (!source || !target || source === target) {
+        el("saveStatus").textContent = "請選擇不同的起點與終點";
+        return;
+      }
+      state.edges.push({
+        id: `E${Date.now()}`,
+        source,
+        target,
+        label: el("edgeLabel").value || "下一步"
+      });
+      save();
+      render();
+    }
+
+    function deleteNode() {
+      if (!selectedId) return;
+      state.nodes = state.nodes.filter((node) => node.id !== selectedId);
+      state.edges = state.edges.filter((edge) => edge.source !== selectedId && edge.target !== selectedId);
+      selectedId = state.nodes[0]?.id || "";
+      save();
+      render();
+    }
+
+    function exportJson() {
+      download("swimlane-flow.sample.json", JSON.stringify(state, null, 2), "application/json");
+    }
+
+    function importJson(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          state = normalize(JSON.parse(String(reader.result || "{}")));
+          selectedId = state.nodes[0]?.id || "";
+          save();
+          render();
+        } catch {
+          el("saveStatus").textContent = "JSON 格式錯誤";
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function typeLabel(type) {
+      return { start: "起點", task: "工作", decision: "判斷", end: "終點" }[type] || "工作";
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, "&#96;");
+    }
+
+    el("docTitle").addEventListener("input", (event) => { state.title = event.target.value; save(); });
+    el("docSummary").addEventListener("input", (event) => { state.summary = event.target.value; save(); });
+    el("laneText").addEventListener("change", (event) => {
+      const nextLanes = event.target.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+      if (!nextLanes.length) return render();
+      state.lanes = nextLanes;
+      state.nodes = state.nodes.map((node) => nextLanes.includes(node.lane) ? node : { ...node, lane: nextLanes[0] });
+      save();
+      render();
+    });
+    el("nodeLane").addEventListener("change", (event) => updateSelected({ lane: event.target.value }));
+    el("nodeType").addEventListener("change", (event) => updateSelected({ type: event.target.value }));
+    el("nodeTitle").addEventListener("input", (event) => updateSelected({ title: event.target.value }));
+    el("nodeDesc").addEventListener("input", (event) => updateSelected({ desc: event.target.value }));
+    el("nodeY").addEventListener("change", (event) => updateSelected({ y: Number(event.target.value) || 100 }));
+    el("nodeHeight").addEventListener("change", (event) => updateSelected({ height: Number(event.target.value) || 112 }));
+    el("addNode").addEventListener("click", addNode);
+    el("connectNodes").addEventListener("click", () => {
+      el("edgeSource").value = selectedId;
+      el("saveStatus").textContent = "請在左側選擇終點並新增連線";
+    });
+    el("addEdge").addEventListener("click", addEdge);
+    el("deleteNode").addEventListener("click", deleteNode);
+    el("clearEdges").addEventListener("click", () => { state.edges = []; save(); render(); });
+    el("exportJson").addEventListener("click", exportJson);
+    el("importJson").addEventListener("click", () => el("fileInput").click());
+    el("fileInput").addEventListener("change", (event) => {
+      const file = event.target.files?.[0];
+      if (file) importJson(file);
+      event.target.value = "";
+    });
+    el("resetSample").addEventListener("click", () => {
+      state = clone(sample);
+      selectedId = state.nodes[0]?.id || "";
+      save();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
