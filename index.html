@@ -1590,26 +1590,74 @@
       return savedAtTime(primaryState) >= savedAtTime(secondaryState) ? primaryState : secondaryState;
     }
 
+    let initialLoadErrorMessage = "";
+
+    function collectUnknownLaneIssues(state) {
+      const issues = [];
+      (state?.flows || []).forEach((flow) => {
+        const flowDoc = getFlowDoc(flow);
+        const customLaneGroups = flowDoc.customLaneGroups || {};
+        const allowed = new Set(laneOptions.concat(Object.keys(customLaneGroups)));
+        (flow.nodes || []).forEach((nodeItem) => {
+          const rawLane = nodeItem?.data?.lane || nodeItem?.data?.actor || "";
+          const lane = normalizeLane(rawLane);
+          if (!lane || lane === noteLaneName || nodeItem?.data?.kind === "note") return;
+          if (!allowed.has(lane)) {
+            issues.push({
+              flowName: flowDoc.featureName || flow.name || flow.id || "未命名泳道圖",
+              nodeId: nodeItem.id || "未命名節點",
+              nodeTitle: nodeItem?.data?.title || "未命名節點",
+              lane
+            });
+          }
+        });
+      });
+      return issues;
+    }
+
+    function formatUnknownLaneMessage(issues, sourceLabel = "資料") {
+      const lines = issues.slice(0, 8).map((issue) => {
+        return `- ${issue.flowName} / ${issue.nodeId} ${issue.nodeTitle}：泳道「${issue.lane}」不在目前泳道選單中`;
+      });
+      const more = issues.length > 8 ? `\n...另有 ${issues.length - 8} 筆` : "";
+      return `${sourceLabel}含有未知泳道，已停止載入或存檔，避免把節點自動改錯。\n請先在該泳道圖新增同名泳道，或修正 JSON 的節點泳道。\n${lines.join("\n")}${more}`;
+    }
+
+    function assertNoUnknownLanes(state, sourceLabel = "資料") {
+      const issues = collectUnknownLaneIssues(state);
+      if (issues.length) {
+        throw new Error(formatUnknownLaneMessage(issues, sourceLabel));
+      }
+      return state;
+    }
+
+    function userFacingErrorMessage(error, fallback) {
+      return error?.message || fallback;
+    }
+
     function loadSavedState() {
       try {
         if (!loadAutoSaveEnabled()) return getDefaultState();
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (!raw) return getDefaultState();
         const parsed = JSON.parse(raw);
-        return normalizeSavedState(parsed) || getDefaultState();
-      } catch {
+        const normalized = normalizeSavedState(parsed) || getDefaultState();
+        return assertNoUnknownLanes(normalized, "瀏覽器暫存");
+      } catch (error) {
+        initialLoadErrorMessage = userFacingErrorMessage(error, "瀏覽器暫存載入失敗，已改用內建範例。");
         return getDefaultState();
       }
     }
 
     function makeSavePayload(doc, flows, activeFlowId, fontSizeMode) {
-      return {
+      const payload = {
         doc,
         flows: flows.map(sanitizeFlowForSave),
         activeFlowId,
         fontSizeMode,
         savedAt: new Date().toISOString()
       };
+      return assertNoUnknownLanes(payload, "目前畫布");
     }
 
     function formatJsonSavedTime(savedAt) {
@@ -1779,13 +1827,15 @@
         if (!response.ok) throw new Error("Autosave server read failed");
         const text = await response.text();
         if (!text.trim()) return null;
-        return normalizeSavedState(JSON.parse(text));
+        const normalized = normalizeSavedState(JSON.parse(text));
+        return assertNoUnknownLanes(normalized, "自動儲存 JSON");
       }
       const file = await handle.getFile();
       const text = await file.text();
       if (!text.trim()) return null;
       const parsed = JSON.parse(text);
-      return normalizeSavedState(parsed);
+      const normalized = normalizeSavedState(parsed);
+      return assertNoUnknownLanes(normalized, "持久 JSON");
     }
 
     function node(id, lane, kind, x, y, title, desc, constraint = "", size = {}) {
@@ -1819,8 +1869,7 @@
 
     function normalizeLane(value) {
       if (value === noteLaneName) return noteLaneName;
-      const mapped = legacyLaneMap[value] || value;
-      const normalized = String(mapped || "").trim();
+      const normalized = String(value || "").trim();
       return normalized || "申請人";
     }
 
@@ -2471,7 +2520,7 @@
       const [connectTargetId, setConnectTargetId] = useState("");
       const [editDialog, setEditDialog] = useState(null);
       const [resizingNodeId, setResizingNodeId] = useState("");
-      const [saveStatus, setSaveStatus] = useState("已載入");
+      const [saveStatus, setSaveStatus] = useState(initialLoadErrorMessage || "已載入");
       const [persistentStatus, setPersistentStatus] = useState(
         supportsAutoPersistentFile() ? "自動儲存 JSON 準備中" : "此瀏覽器不支援自動儲存 JSON"
       );
@@ -2614,7 +2663,16 @@
         if (!dirtySaveRef.current && !force) return true;
         autosaveInFlightRef.current = true;
         const latest = latestSaveRef.current;
-        const payload = makeSavePayload(latest.doc, latest.flows, latest.activeFlowId, latest.fontSizeMode);
+        let payload;
+        try {
+          payload = makeSavePayload(latest.doc, latest.flows, latest.activeFlowId, latest.fontSizeMode);
+        } catch (error) {
+          autosaveInFlightRef.current = false;
+          dirtySaveRef.current = true;
+          setPersistentStatus("資料驗證失敗，未寫入 JSON");
+          if (updateStatus) setSaveStatus(userFacingErrorMessage(error, "資料驗證失敗，未寫入 JSON"));
+          return false;
+        }
         const localOk = saveStatePayload(payload);
         dirtySaveRef.current = false;
         let fileOk = true;
@@ -2678,7 +2736,15 @@
           setAutoSaveEnabled(true);
           rememberAutoSaveEnabled(true);
         }
-        const fileState = await readPersistentState(handle).catch(() => null);
+        let fileState = null;
+        try {
+          fileState = await readPersistentState(handle);
+        } catch (error) {
+          dirtySaveRef.current = false;
+          setPersistentStatus(`${statusPrefix} 載入失敗：${handle.name}`);
+          setSaveStatus(userFacingErrorMessage(error, "自動儲存 JSON 載入失敗，請修正 JSON 後重新整理。"));
+          return handle;
+        }
         const newestState = pickNewestState(initialState, fileState);
         if (newestState) {
           const fileFlow = newestState.flows.find((flow) => flow.id === newestState.activeFlowId) || newestState.flows[0];
@@ -2750,6 +2816,12 @@
           skipNextDirtyRef.current = false;
           return;
         }
+        if (initialLoadErrorMessage) {
+          dirtySaveRef.current = false;
+          setPersistentStatus("資料驗證失敗，未連接自動儲存 JSON");
+          setSaveStatus(initialLoadErrorMessage);
+          return;
+        }
         dirtySaveRef.current = true;
         setSaveStatus(autoSaveEnabled ? "有未儲存變更，15 秒內自動儲存" : "有未儲存變更，自動存檔已關閉");
         if (immediateAutosaveRef.current && autoSaveEnabled) {
@@ -2782,10 +2854,16 @@
       }, [flushAutosave, autoSaveEnabled]);
 
       React.useEffect(() => {
+        if (initialLoadErrorMessage) {
+          persistentHandleRef.current = null;
+          persistentReadyRef.current = false;
+          setPersistentStatus("資料驗證失敗，未連接自動儲存 JSON");
+          return;
+        }
         let cancelled = false;
         setupAutoPersistentJson()
           .catch(() => {
-            if (!cancelled) {
+            if (!cancelled && !initialLoadErrorMessage) {
               persistentHandleRef.current = null;
               persistentReadyRef.current = false;
               setPersistentStatus("自動儲存 JSON 建立失敗");
@@ -3404,7 +3482,7 @@
             setSaveStatus("已取消開啟JSON 檔案");
           } else {
             setPersistentStatus("JSON 檔案 載入失敗");
-            setSaveStatus("JSON 檔案 載入失敗");
+            setSaveStatus(userFacingErrorMessage(error, "JSON 檔案 載入失敗"));
           }
         }
       };
@@ -3459,7 +3537,11 @@
       };
 
       const exportJson = () => {
-        download(getJsonFilename(), JSON.stringify(makeSavePayload(doc, flows, activeFlowId, fontSizeMode), null, 2), "application/json");
+        try {
+          download(getJsonFilename(), JSON.stringify(makeSavePayload(doc, flows, activeFlowId, fontSizeMode), null, 2), "application/json");
+        } catch (error) {
+          setSaveStatus(userFacingErrorMessage(error, "資料驗證失敗，未匯出 JSON"));
+        }
       };
 
       const exportMarkdown = () => {
