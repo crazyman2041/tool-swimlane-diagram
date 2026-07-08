@@ -743,8 +743,10 @@
       z-index: 95;
       width: min(380px, calc(100% - 24px));
       max-height: min(420px, calc(100% - 24px));
-      overflow: hidden;
-      pointer-events: none;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      pointer-events: auto;
       border: 1px solid #bfdbfe;
       border-left: 5px solid var(--blue);
       border-radius: 8px;
@@ -2731,6 +2733,7 @@
       const [autoSaveEnabled, setAutoSaveEnabled] = useState(loadAutoSaveEnabled);
       const [flowViewport, setFlowViewport] = useState({ x: 32, y: 28, zoom: 0.82 });
       const [nodePreview, setNodePreview] = useState(null);
+      const nodePreviewHideTimerRef = React.useRef(null);
       const updateNodeInternals = useUpdateNodeInternals();
       const latestSaveRef = React.useRef({ doc, flows, activeFlowId, fontSizeMode });
       const dirtySaveRef = React.useRef(false);
@@ -3103,10 +3106,24 @@
       const flowViewportHeight = viewMode === "present" ? "calc(100vh - 176px)" : "100%";
       const selectedNode = nodes.find((item) => item.id === selectedNodeId);
       const selectedEdge = edges.find((item) => item.id === selectedEdgeId);
-      const hideNodePreview = useCallback((nodeId = "") => {
-        setNodePreview((current) => (!current || (nodeId && current.id !== nodeId) ? current : null));
+      const clearNodePreviewHideTimer = useCallback(() => {
+        if (!nodePreviewHideTimerRef.current) return;
+        window.clearTimeout(nodePreviewHideTimerRef.current);
+        nodePreviewHideTimerRef.current = null;
       }, []);
+      const hideNodePreview = useCallback((nodeId = "") => {
+        clearNodePreviewHideTimer();
+        setNodePreview((current) => (!current || (nodeId && current.id !== nodeId) ? current : null));
+      }, [clearNodePreviewHideTimer]);
+      const scheduleNodePreviewHide = useCallback((nodeId = "", delay = 360) => {
+        clearNodePreviewHideTimer();
+        nodePreviewHideTimerRef.current = window.setTimeout(() => {
+          nodePreviewHideTimerRef.current = null;
+          setNodePreview((current) => (!current || (nodeId && current.id !== nodeId) ? current : null));
+        }, delay);
+      }, [clearNodePreviewHideTimer]);
       const showNodePreview = useCallback((nodeId, nodeData, event) => {
+        clearNodePreviewHideTimer();
         const canvas = event.currentTarget.closest(".flow-canvas");
         if (!canvas) return;
         const canvasRect = canvas.getBoundingClientRect();
@@ -3139,7 +3156,8 @@
           desc: nodeData.desc,
           constraint: nodeData.constraint
         });
-      }, []);
+      }, [clearNodePreviewHideTimer]);
+      React.useEffect(() => () => clearNodePreviewHideTimer(), [clearNodePreviewHideTimer]);
       const highlightedEdgeIds = useMemo(() => {
         if (selectedEdge) return new Set([selectedEdge.id]);
         if (selectedNodeId) {
@@ -3256,7 +3274,7 @@
             focus,
             readonly: viewMode === "present",
             onPreviewEnter: showNodePreview,
-            onPreviewLeave: hideNodePreview,
+            onPreviewLeave: scheduleNodePreviewHide,
             onResizeStart: handleNodeResizeStart,
             onResize: handleNodeResize,
             onResizeEnd: handleNodeResizeEnd
@@ -3266,7 +3284,7 @@
             height: clamped.data.height
           }
         };
-      }), [nodes, edges, visibleLanes, selectedEdge, edgeEndpointNodeIds, showNodePreview, hideNodePreview, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
+      }), [nodes, edges, visibleLanes, selectedEdge, edgeEndpointNodeIds, showNodePreview, scheduleNodePreviewHide, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
       const displayNodes = useMemo(() => laneNodes.concat(nodesWithWarnings), [laneNodes, nodesWithWarnings]);
       const displayEdges = useMemo(() => edges.map((item) => {
         const isSelectedEdge = selectedEdgeId === item.id;
@@ -4016,7 +4034,12 @@
         ),
         nodePreview ? h("div", {
           className: "node-preview-card",
-          style: { left: nodePreview.x, top: nodePreview.y }
+          style: { left: nodePreview.x, top: nodePreview.y },
+          onMouseEnter: clearNodePreviewHideTimer,
+          onMouseLeave: () => scheduleNodePreviewHide(nodePreview.id),
+          onWheel: (event) => event.stopPropagation(),
+          onMouseDown: (event) => event.stopPropagation(),
+          onClick: (event) => event.stopPropagation()
         },
           h("div", { className: "node-meta" },
             h("span", null,
