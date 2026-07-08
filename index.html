@@ -446,9 +446,51 @@
       color: #047857;
     }
 
+    .tab-version.draft {
+      background: #fffbeb;
+      color: #92400e;
+    }
+
     .flow-order-list {
       display: grid;
       gap: 8px;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .history-actions button {
+      flex: 1 1 0;
+      padding: 6px 8px;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 4px;
+      max-height: 92px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .history-item span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .flow-search-field {
+      margin: 4px 0 8px;
     }
 
     .flow-order-item {
@@ -460,15 +502,57 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .flow-order-item:hover,
+    .flow-order-item:focus-visible {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      outline: none;
+    }
+
+    .flow-order-item.active {
+      border-color: #60a5fa;
+      background: #dbeafe;
     }
 
     .flow-order-name {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .flow-order-name .tab-version {
+      flex: 0 0 auto;
+      margin-left: 0;
+    }
+
+    .flow-order-title {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .flow-order-move {
+      width: 32px;
+      min-width: 32px;
+      height: 32px;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .flow-order-empty {
+      padding: 10px 12px;
+      color: var(--muted);
       font-size: 13px;
-      font-weight: 800;
     }
 
     .flow-toolbar {
@@ -1401,9 +1485,77 @@
     const fontSizeModes = ["small", "medium", "large"];
     const fontSizeLabels = { small: "小", medium: "中", large: "大" };
     const flowVersions = ["非正式", "正式"];
+    const HISTORY_LIMIT = 20;
 
     function getDocumentVersion(flows) {
       return flows.length > 0 && flows.every((flow) => flow.version === "正式") ? "正式" : "非正式";
+    }
+
+    function collectSearchParts(value, parts = []) {
+      if (value === null || value === undefined) return parts;
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        parts.push(String(value));
+        return parts;
+      }
+      if (Array.isArray(value)) {
+        value.forEach((item) => collectSearchParts(item, parts));
+        return parts;
+      }
+      if (typeof value === "object") {
+        Object.values(value).forEach((item) => collectSearchParts(item, parts));
+      }
+      return parts;
+    }
+
+    function normalizeSearchText(value) {
+      return String(value || "").toLowerCase().replace(/\s+/g, "");
+    }
+
+    function splitSearchTerms(query) {
+      return String(query || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+    }
+
+    function fuzzyMatchText(text, term) {
+      const source = normalizeSearchText(text);
+      const target = normalizeSearchText(term);
+      if (!target) return true;
+      if (source.includes(target)) return true;
+      let targetIndex = 0;
+      for (let sourceIndex = 0; sourceIndex < source.length && targetIndex < target.length; sourceIndex += 1) {
+        if (source[sourceIndex] === target[targetIndex]) targetIndex += 1;
+      }
+      return targetIndex === target.length;
+    }
+
+    function getFlowSearchText(flow) {
+      return collectSearchParts({
+        id: flow.id,
+        name: flow.name,
+        version: flow.version,
+        doc: getFlowDoc(flow),
+        nodes: flow.nodes,
+        edges: flow.edges
+      }).join(" ");
+    }
+
+    function matchesFlowSearch(flow, query) {
+      const terms = splitSearchTerms(query);
+      if (terms.length === 0) return true;
+      const searchText = getFlowSearchText(flow);
+      return terms.every((term) => fuzzyMatchText(searchText, term));
+    }
+
+    function clonePlainValue(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function formatHistoryTime(value) {
+      return new Date(value).toLocaleTimeString("zh-TW", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
     }
 
     function getDefaultState() {
@@ -2326,6 +2478,8 @@
       const [lastJsonSavedAt, setLastJsonSavedAt] = useState(initialState.savedAt || "");
       const [fontSizeMode, setFontSizeMode] = useState(initialState.fontSizeMode || "medium");
       const [viewMode, setViewMode] = useState("edit");
+      const [flowSearchQuery, setFlowSearchQuery] = useState("");
+      const [historyState, setHistoryState] = useState({ undo: [], redo: [], log: [] });
       const [autoSaveEnabled, setAutoSaveEnabled] = useState(loadAutoSaveEnabled);
       const [flowViewport, setFlowViewport] = useState({ x: 32, y: 28, zoom: 0.82 });
       const updateNodeInternals = useUpdateNodeInternals();
@@ -2339,6 +2493,8 @@
       const resizeFrameRef = React.useRef(0);
       const immediateAutosaveRef = React.useRef(false);
       const tabDragRef = React.useRef({ active: false, moved: false, startX: 0, scrollLeft: 0 });
+      const dragHistorySnapshotRef = React.useRef(null);
+      const resizeHistorySnapshotRef = React.useRef(null);
 
       const activeFlow = flows.find((item) => item.id === activeFlowId) || flows[0];
       const activeFlowDoc = getFlowDoc(activeFlow);
@@ -2348,6 +2504,106 @@
       const edgeLabelFontSize = { small: 16, medium: 18, large: 22 }[fontSizeMode] || 18;
       const [nodes, setNodes, onNodesChange] = useNodesState(activeFlow.nodes);
       const [edges, setEdges, onEdgesChange] = useEdgesState(activeFlow.edges);
+
+      const selectFlow = useCallback((flowId) => {
+        if (!flows.some((flow) => flow.id === flowId)) return;
+        setActiveFlowId(flowId);
+      }, [flows]);
+
+      const makeHistorySnapshot = useCallback(() => {
+        const nextNodes = prepareNodesForSave(nodes);
+        const nextEdges = prepareEdgesForSave(edges);
+        const syncedFlows = flows.map((flow) => flow.id === activeFlowId
+          ? { ...flow, nodes: nextNodes, edges: nextEdges }
+          : flow);
+        return clonePlainValue({ doc, flows: syncedFlows, activeFlowId, fontSizeMode });
+      }, [doc, flows, activeFlowId, fontSizeMode, nodes, edges]);
+
+      const restoreHistorySnapshot = useCallback((snapshot) => {
+        if (!snapshot?.flows?.length) return;
+        const restored = clonePlainValue(snapshot);
+        const nextActiveFlowId = restored.flows.some((flow) => flow.id === restored.activeFlowId)
+          ? restored.activeFlowId
+          : restored.flows[0].id;
+        const restoredFlow = restored.flows.find((flow) => flow.id === nextActiveFlowId) || restored.flows[0];
+        setDoc(restored.doc);
+        setFlows(restored.flows);
+        setActiveFlowId(nextActiveFlowId);
+        setNodes(restoredFlow.nodes);
+        setEdges(restoredFlow.edges);
+        setSelectedNodeId(restoredFlow.nodes[0]?.id || "");
+        setSelectedEdgeId("");
+        setConnectSourceId("");
+        setConnectTargetId("");
+        setEditDialog(null);
+        setFontSizeMode(restored.fontSizeMode || "medium");
+        latestSaveRef.current = {
+          doc: restored.doc,
+          flows: restored.flows,
+          activeFlowId: nextActiveFlowId,
+          fontSizeMode: restored.fontSizeMode || "medium"
+        };
+        dirtySaveRef.current = true;
+      }, [setNodes, setEdges]);
+
+      const pushHistoryLog = (items, label, at, coalesceKey) => {
+        const first = items[0];
+        if (first?.coalesceKey === coalesceKey) {
+          return [{ ...first, label, at }, ...items.slice(1)];
+        }
+        return [{ id: `log-${at}-${Math.random()}`, label, at, coalesceKey }, ...items].slice(0, HISTORY_LIMIT);
+      };
+
+      const recordHistory = useCallback((label, coalesceKey = label, snapshotOverride = null) => {
+        const snapshot = snapshotOverride || makeHistorySnapshot();
+        const at = Date.now();
+        setHistoryState((current) => {
+          const first = current.undo[0];
+          const shouldCoalesce = first?.coalesceKey === coalesceKey && at - first.at < 1200;
+          const entry = shouldCoalesce
+            ? { ...first, label, at }
+            : { id: `undo-${at}-${Math.random()}`, label, at, coalesceKey, snapshot };
+          return {
+            undo: shouldCoalesce ? [entry, ...current.undo.slice(1)] : [entry, ...current.undo].slice(0, HISTORY_LIMIT),
+            redo: [],
+            log: pushHistoryLog(current.log, label, at, coalesceKey)
+          };
+        });
+      }, [makeHistorySnapshot]);
+
+      const undoHistory = useCallback(() => {
+        const entry = historyState.undo[0];
+        if (!entry) {
+          setSaveStatus("沒有可復原的操作");
+          return;
+        }
+        const currentSnapshot = makeHistorySnapshot();
+        const at = Date.now();
+        setHistoryState((current) => ({
+          undo: current.undo.slice(1),
+          redo: [{ ...entry, id: `redo-${at}-${Math.random()}`, at, snapshot: currentSnapshot }, ...current.redo].slice(0, HISTORY_LIMIT),
+          log: pushHistoryLog(current.log, `復原：${entry.label}`, at, `undo-${at}`)
+        }));
+        restoreHistorySnapshot(entry.snapshot);
+        setSaveStatus(`已復原：${entry.label}`);
+      }, [historyState.undo, makeHistorySnapshot, restoreHistorySnapshot]);
+
+      const redoHistory = useCallback(() => {
+        const entry = historyState.redo[0];
+        if (!entry) {
+          setSaveStatus("沒有可取消復原的操作");
+          return;
+        }
+        const currentSnapshot = makeHistorySnapshot();
+        const at = Date.now();
+        setHistoryState((current) => ({
+          undo: [{ ...entry, id: `undo-${at}-${Math.random()}`, at, snapshot: currentSnapshot }, ...current.undo].slice(0, HISTORY_LIMIT),
+          redo: current.redo.slice(1),
+          log: pushHistoryLog(current.log, `取消復原：${entry.label}`, at, `redo-${at}`)
+        }));
+        restoreHistorySnapshot(entry.snapshot);
+        setSaveStatus(`已取消復原：${entry.label}`);
+      }, [historyState.redo, makeHistorySnapshot, restoreHistorySnapshot]);
 
       const flushAutosave = useCallback(async (updateStatus = true, force = false) => {
         if (!autoSaveEnabled) {
@@ -2435,6 +2691,7 @@
           setSelectedNodeId(fileFlow.nodes[0]?.id || "");
           setSelectedEdgeId("");
           setFontSizeMode(newestState.fontSizeMode);
+          setHistoryState({ undo: [], redo: [], log: [] });
           latestSaveRef.current = newestState;
           const payload = makeSavePayload(newestState.doc, newestState.flows, newestState.activeFlowId, newestState.fontSizeMode);
           const writeResult = await writePersistentState(handle, payload);
@@ -2607,9 +2864,10 @@
         refreshNodeInternals(nodeId);
       }, [setNodes, refreshNodeInternals]);
       const handleNodeResizeStart = useCallback((nodeId) => {
+        resizeHistorySnapshotRef.current = makeHistorySnapshot();
         setResizingNodeId(nodeId);
         refreshNodeInternals(nodeId);
-      }, [refreshNodeInternals]);
+      }, [makeHistorySnapshot, refreshNodeInternals]);
       const handleNodeResize = useCallback((nodeId, size) => {
         setResizingNodeId(nodeId);
         applyNodeResize(nodeId, size);
@@ -2617,8 +2875,12 @@
       const handleNodeResizeEnd = useCallback((nodeId, size) => {
         applyNodeResize(nodeId, size);
         refreshNodeInternals(nodeId);
+        if (resizeHistorySnapshotRef.current) {
+          recordHistory("調整節點大小", `resize:${nodeId}`, resizeHistorySnapshotRef.current);
+          resizeHistorySnapshotRef.current = null;
+        }
         window.requestAnimationFrame(() => setResizingNodeId(""));
-      }, [applyNodeResize, refreshNodeInternals]);
+      }, [applyNodeResize, refreshNodeInternals, recordHistory]);
       const laneNodes = useMemo(() => {
         let x = 0;
         let laneIndex = 0;
@@ -2710,6 +2972,7 @@
       const onConnect = useCallback((params) => {
         const resolvedConnection = resolveConnectionHandles(params, edges);
         if (!resolvedConnection) return;
+        recordHistory("新增箭頭", "edge:add");
         setEdges((eds) => addEdge({
           ...resolvedConnection,
           id: `e-${resolvedConnection.source}-${resolvedConnection.target}-${Date.now()}`,
@@ -2724,15 +2987,16 @@
           labelBgBorderRadius: 8,
           labelBgStyle: { fill: "#fff", stroke: "#cbd5e1" }
         }, eds));
-      }, [edges, setEdges, edgeLabelFontSize]);
+      }, [edges, setEdges, edgeLabelFontSize, recordHistory]);
 
       const onReconnect = useCallback((oldEdge, newConnection) => {
         const resolvedConnection = resolveConnectionHandles(newConnection, edges, oldEdge.id);
         if (!resolvedConnection) return;
+        recordHistory("調整箭頭連線", `edge:reconnect:${oldEdge.id}`);
         setEdges((eds) => reconnectEdge(oldEdge, {
           ...resolvedConnection
         }, eds));
-      }, [edges, setEdges]);
+      }, [edges, setEdges, recordHistory]);
 
       const onReconnectEnd = useCallback((event, oldEdge, handleType) => {
         const pointer = getPointerClientPosition(event);
@@ -2741,6 +3005,7 @@
         const nodeId = isSource ? oldEdge.source : oldEdge.target;
         const nearest = nearestNodeHandleAtPoint(nodeId, pointer.clientX, pointer.clientY);
         if (!nearest?.handleId) return;
+        recordHistory("調整箭頭端點", `edge:handle:${oldEdge.id}`);
         setEdges((items) => items.map((item) => {
           if (item.id !== oldEdge.id) return item;
           const nextEdge = isSource
@@ -2748,15 +3013,17 @@
             : { ...item, targetHandle: normalizeHandleId(nearest.handleId, "left-2", "target") };
           if (nextEdge.sourceHandle === item.sourceHandle && nextEdge.targetHandle === item.targetHandle) return item;
           const resolvedEdge = resolveConnectionHandles(nextEdge, items, item.id);
-          return resolvedEdge ? { ...nextEdge, sourceHandle: resolvedEdge.sourceHandle, targetHandle: resolvedEdge.targetHandle } : item;
+          if (!resolvedEdge) return item;
+          return { ...nextEdge, sourceHandle: resolvedEdge.sourceHandle, targetHandle: resolvedEdge.targetHandle };
         }));
-      }, [setEdges]);
+      }, [setEdges, recordHistory]);
 
       const connectNodes = (sourceId, targetId) => {
         if (!sourceId || !targetId || sourceId === targetId) return;
         const sourceNode = nodes.find((item) => item.id === sourceId);
         const targetNode = nodes.find((item) => item.id === targetId);
         if (isNoteNode(sourceNode) || isNoteNode(targetNode)) return;
+        recordHistory("新增箭頭", "edge:add");
         setEdges((items) => {
           const sourceHandle = firstFreeHandle(items, sourceId, ["right-2", "bottom-2", "left-2", "top-2"], "source");
           const targetHandle = firstFreeHandle(items, targetId, ["left-2", "top-2", "right-2", "bottom-2"], "target");
@@ -2783,6 +3050,7 @@
       };
 
       const updateFlowDoc = (key, value) => {
+        recordHistory("編輯泳道圖描述", `flow-doc:${activeFlowId}:${key}`);
         setFlows((items) => items.map((item) => {
           if (item.id !== activeFlowId) return item;
           const nextDoc = {
@@ -2794,6 +3062,7 @@
       };
       const updateNodeData = (key, value) => {
         if (!selectedNode) return;
+        recordHistory(`編輯節點：${selectedNode.data.title || selectedNode.id}`, `node:${selectedNode.id}:${key}`);
         const laneValue = typeof value === "object" && value ? value.lane : value;
         const nextLane = key === "lane" ? normalizeLane(laneValue) : "";
         const nextGroup = key === "lane" && typeof value === "object" && value ? String(value.group || "").trim() : "";
@@ -2847,6 +3116,7 @@
           setSaveStatus("至少需要保留一個泳道");
           return;
         }
+        recordHistory(`刪除泳道：${targetLane}`, `lane:delete:${targetLane}`);
         const fallbackLane = remainingLanes[0];
         setNodes((items) => clampFlowNodes(items.map((item) => {
           if (isNoteNode(item) || normalizeLane(item.data?.lane) !== targetLane) return item;
@@ -2866,14 +3136,17 @@
       };
 
       const updateFlowName = (value) => {
+        recordHistory("改流程圖名稱", `flow-name:${activeFlowId}`);
         setFlows((items) => items.map((item) => item.id === activeFlowId ? { ...item, name: value } : item));
       };
 
       const updateFlowVersion = (value) => {
+        recordHistory("改泳道圖版本", `flow-version:${activeFlowId}`);
         setFlows((items) => items.map((item) => item.id === activeFlowId ? { ...item, version: flowVersions.includes(value) ? value : "非正式" } : item));
       };
 
       const moveFlow = (flowId, direction) => {
+        recordHistory("調整 Tab 順序", "flow-order");
         setFlows((items) => {
           const index = items.findIndex((item) => item.id === flowId);
           if (index < 0) return items;
@@ -2894,11 +3167,13 @@
 
       const updateEdge = (key, value) => {
         if (!selectedEdge) return;
+        recordHistory(`編輯箭頭：${selectedEdge.label || selectedEdge.id}`, `edge:${selectedEdge.id}:${key}`);
         setEdges((items) => items.map((item) => item.id === selectedEdge.id ? { ...item, [key]: value } : item));
       };
 
       const updateEdgeFields = (patch) => {
         if (!selectedEdge) return;
+        recordHistory(`編輯箭頭：${selectedEdge.label || selectedEdge.id}`, `edge:${selectedEdge.id}:fields`);
         setEdges((items) => items.map((item) => {
           if (item.id !== selectedEdge.id) return item;
           const nextEdge = {
@@ -2924,6 +3199,7 @@
       };
 
       const addNodeToFlow = () => {
+        recordHistory("新增節點", "node:add");
         const id = `N${nodes.length + 1}`;
         setNodes((items) => clampFlowNodes(items.concat(node(id, "申請人", "task", lanePadding, 240 + nodes.length * 28, "新增流程節點", "請填寫此節點的流程說明。", "待補"))));
         setSelectedNodeId(id);
@@ -2931,6 +3207,7 @@
       };
 
       const addNoteToFlow = () => {
+        recordHistory("新增備註", "note:add");
         const id = `R${nodes.filter((item) => isNoteNode(item)).length + 1}`;
         setNodes((items) => clampFlowNodes(items.concat(noteNode(id, 120 + nodes.length * 16, "新增備註", "請填寫此流程的補充說明。"))));
         setSelectedNodeId(id);
@@ -2945,6 +3222,7 @@
           setSaveStatus("節點仍有連線，請先刪除線");
           return false;
         }
+        recordHistory(`刪除節點：${selectedNode.data.title || selectedNode.id}`, `node:delete:${selectedNode.id}`);
         setNodes((items) => items.filter((item) => item.id !== selectedNode.id));
         setSelectedNodeId(nodes.find((item) => item.id !== selectedNode.id)?.id || "");
         setEditDialog(null);
@@ -2953,11 +3231,31 @@
 
       const deleteSelectedEdge = () => {
         if (!selectedEdge) return false;
+        recordHistory(`刪除箭頭：${selectedEdge.label || selectedEdge.id}`, `edge:delete:${selectedEdge.id}`);
         setEdges((items) => items.filter((item) => item.id !== selectedEdge.id));
         setSelectedEdgeId("");
         setEditDialog(null);
         return true;
       };
+
+      React.useEffect(() => {
+        const handleHistoryKeyDown = (event) => {
+          if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+          const key = String(event.key || "").toLowerCase();
+          const isUndo = key === "z" && !event.shiftKey;
+          const isRedo = key === "y" || (key === "z" && event.shiftKey);
+          if (!isUndo && !isRedo) return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (isUndo) {
+            undoHistory();
+          } else {
+            redoHistory();
+          }
+        };
+        window.addEventListener("keydown", handleHistoryKeyDown, true);
+        return () => window.removeEventListener("keydown", handleHistoryKeyDown, true);
+      }, [undoHistory, redoHistory]);
 
       React.useEffect(() => {
         const handleKeyDown = (event) => {
@@ -2982,12 +3280,20 @@
         return () => window.removeEventListener("keydown", handleKeyDown, true);
       }, [selectedNode, selectedEdge, deleteSelectedNode, deleteSelectedEdge]);
 
+      const onNodeDragStart = () => {
+        dragHistorySnapshotRef.current = makeHistorySnapshot();
+      };
+
       const onNodeDragStop = (_event, movedNode) => {
         setNodes((items) => {
           return clampFlowNodes(items.map((item) => item.id === movedNode.id
             ? { ...item, position: { ...item.position, y: movedNode.position.y } }
             : item));
         });
+        if (dragHistorySnapshotRef.current) {
+          recordHistory("移動節點", `node:move:${movedNode.id}`, dragHistorySnapshotRef.current);
+          dragHistorySnapshotRef.current = null;
+        }
       };
 
       const onNodeDrag = (_event, movedNode) => {
@@ -3000,6 +3306,7 @@
       };
 
       const addFlow = () => {
+        recordHistory("新增泳道圖", "flow:add");
         const id = `flow-${flows.length + 1}`;
         const next = {
           id,
@@ -3019,6 +3326,8 @@
 
       const duplicateFlow = () => {
         const source = flows.find((item) => item.id === activeFlowId);
+        if (!source) return;
+        recordHistory("複製泳道圖", "flow:duplicate");
         const id = `flow-${flows.length + 1}`;
         const copy = JSON.parse(JSON.stringify(source));
         copy.id = id;
@@ -3030,6 +3339,7 @@
 
       const deleteFlow = () => {
         if (flows.length <= 1) return;
+        recordHistory("刪除泳道圖", `flow:delete:${activeFlowId}`);
         const next = flows.filter((item) => item.id !== activeFlowId);
         setFlows(next);
         setActiveFlowId(next[0].id);
@@ -3048,6 +3358,7 @@
         setSelectedNodeId(fileFlow.nodes[0]?.id || "");
         setSelectedEdgeId("");
         setFontSizeMode(fileState.fontSizeMode);
+        setHistoryState({ undo: [], redo: [], log: [] });
         latestSaveRef.current = fileState;
         dirtySaveRef.current = true;
         persistentHandleRef.current = handle;
@@ -3292,6 +3603,7 @@
             setSelectedNodeId("");
             setEditDialog("edge");
           },
+          onNodeDragStart: readonly ? undefined : onNodeDragStart,
           onNodeDrag: readonly ? undefined : onNodeDrag,
           onNodeDragStop: readonly ? undefined : onNodeDragStop,
           fitView: false,
@@ -3325,7 +3637,7 @@
           onClick: () => setActiveFlowId(flow.id)
         },
           flow.name,
-          h("span", { className: `tab-version ${flow.version === "正式" ? "formal" : ""}` }, flow.version || "非正式")
+          h("span", { className: `tab-version ${flow.version === "正式" ? "formal" : "draft"}` }, flow.version || "非正式")
         ))
       );
 
@@ -3412,7 +3724,7 @@
                 h("button", { type: "button", onClick: () => setCollapsed(true) }, "向左收合"),
                 h("span", { className: "tag info" }, selectedEdge ? "正在編輯箭頭" : connectSourceId ? `箭頭起點：${connectSourceId}` : connectTargetId ? `箭頭終點：${connectTargetId}` : "點節點後編輯")
               ),
-              renderFlowManagerPanel({ flows, activeFlow, moveFlow, addFlow, duplicateFlow, deleteFlow }),
+              renderFlowManagerPanel({ flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow }),
               renderDocPanel(activeFlowDoc, updateFlowDoc, activeFlow, updateFlowVersion),
               renderNodePanel({ activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes })
             )
@@ -3448,7 +3760,7 @@
     }
 
     function renderFlowManagerPanel(props) {
-      const { flows, activeFlow, moveFlow, addFlow, duplicateFlow, deleteFlow } = props;
+      const { flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow } = props;
       return h("details", { className: "panel", open: true },
         h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "泳道圖管理"), h("span", null, "▸"))),
         h("div", { className: "panel-body" },
@@ -3457,31 +3769,70 @@
             h("button", { type: "button", onClick: duplicateFlow }, "複製目前圖"),
             h("button", { type: "button", className: "danger", disabled: flows.length <= 1, onClick: deleteFlow }, "刪除目前圖")
           ),
-          renderFlowOrderEditor(flows, activeFlow.id, moveFlow)
+          renderHistoryPanel(historyState, undoHistory, redoHistory),
+          renderFlowOrderEditor(flows, activeFlow.id, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery)
         )
       );
     }
 
-    function renderFlowOrderEditor(flows, activeFlowId, moveFlow) {
+    function renderHistoryPanel(historyState, undoHistory, redoHistory) {
+      const logItems = historyState.log || [];
+      return h("div", { className: "status-note", style: { marginBottom: "12px" } },
+        h("strong", null, "復原 / 取消復原"),
+        h("div", { className: "history-actions", style: { marginTop: "8px" } },
+          h("button", { type: "button", disabled: !(historyState.undo || []).length, onClick: undoHistory, title: "復原 Ctrl+Z" }, "↶ 復原"),
+          h("button", { type: "button", disabled: !(historyState.redo || []).length, onClick: redoHistory, title: "取消復原 Ctrl+Y" }, "↷ 取消復原")
+        ),
+        h("div", { className: "history-list", style: { marginTop: "8px" } },
+          logItems.length
+            ? logItems.map((item) => h("div", { key: item.id, className: "history-item", title: item.label },
+                h("span", null, formatHistoryTime(item.at)),
+                h("span", null, item.label)
+              ))
+            : h("p", { className: "hint", style: { margin: 0 } }, "尚無操作記錄")
+        )
+      );
+    }
+
+    function renderFlowOrderEditor(flows, activeFlowId, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery) {
+      const filteredFlows = flows
+        .map((flow, index) => ({ flow, index }))
+        .filter(({ flow }) => matchesFlowSearch(flow, flowSearchQuery));
       return h("div", { className: "status-note" },
         h("strong", null, "Tab 順序"),
-        h("p", { className: "hint" }, "調整上方泳道圖 tab 的排列順序；tab 不會自動加序號。"),
+        inputField("泳道圖搜尋", "flowSearch", flowSearchQuery, setFlowSearchQuery, false, "例：請假 主管 通知", "flow-search-field"),
+        h("p", { className: "hint" }, "可模糊搜尋泳道圖主體資料、節點內容與線段文字；點選項目可載入該泳道圖。"),
         h("div", { className: "flow-order-list" },
-          flows.map((flow, index) => h("div", {
-            key: flow.id,
-            className: "flow-order-item"
-          },
+          filteredFlows.length
+            ? filteredFlows.map(({ flow, index }) => h("div", {
+              key: flow.id,
+              className: `flow-order-item ${flow.id === activeFlowId ? "active" : ""}`,
+              role: "button",
+              tabIndex: 0,
+              onClick: () => selectFlow(flow.id),
+              onKeyDown: (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  selectFlow(flow.id);
+                }
+              }
+            },
             h("div", {
               className: "flow-order-name",
               title: flow.name
-            }, flow.name, flow.id === activeFlowId ? h("span", { className: "tab-version formal" }, "目前") : null),
+            },
+              h("span", { className: "flow-order-title" }, flow.name),
+              h("span", { className: `tab-version ${flow.version === "正式" ? "formal" : "draft"}` }, flow.version || "非正式"),
+              flow.id === activeFlowId ? h("span", { className: "tab-version formal" }, "目前") : null
+            ),
             h("div", { className: "toolbar" },
-              h("button", { type: "button", disabled: index === 0, onClick: () => moveFlow(flow.id, "first") }, "置頂"),
-              h("button", { type: "button", disabled: index === 0, onClick: () => moveFlow(flow.id, "up") }, "上移"),
-              h("button", { type: "button", disabled: index === flows.length - 1, onClick: () => moveFlow(flow.id, "down") }, "下移"),
-              h("button", { type: "button", disabled: index === flows.length - 1, onClick: () => moveFlow(flow.id, "last") }, "置底")
+              h("button", { type: "button", className: "flow-order-move", disabled: index === 0, title: "置頂", onClick: (event) => { event.stopPropagation(); moveFlow(flow.id, "first"); } }, "⤒"),
+              h("button", { type: "button", className: "flow-order-move", disabled: index === 0, title: "上移", onClick: (event) => { event.stopPropagation(); moveFlow(flow.id, "up"); } }, "↑"),
+              h("button", { type: "button", className: "flow-order-move", disabled: index === flows.length - 1, title: "下移", onClick: (event) => { event.stopPropagation(); moveFlow(flow.id, "down"); } }, "↓"),
+              h("button", { type: "button", className: "flow-order-move", disabled: index === flows.length - 1, title: "置底", onClick: (event) => { event.stopPropagation(); moveFlow(flow.id, "last"); } }, "⤓")
             )
           ))
+          : h("div", { className: "flow-order-empty" }, "找不到符合的泳道圖")
         )
       );
     }
@@ -3677,10 +4028,10 @@
       );
     }
 
-    function inputField(label, id, value, onChange, readOnly = false) {
-      return h("div", { className: "field" },
+    function inputField(label, id, value, onChange, readOnly = false, placeholder = "", className = "") {
+      return h("div", { className: `field ${className}`.trim() },
         h("label", { htmlFor: id }, label),
-        h("input", { id, value: value || "", readOnly, onChange: (event) => onChange(event.target.value) })
+        h("input", { id, value: value || "", readOnly, placeholder, onChange: (event) => onChange(event.target.value) })
       );
     }
 
