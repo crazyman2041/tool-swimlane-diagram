@@ -738,6 +738,53 @@
       height: 100%;
     }
 
+    .node-preview-card {
+      position: absolute;
+      z-index: 95;
+      width: min(380px, calc(100% - 24px));
+      max-height: min(420px, calc(100% - 24px));
+      overflow: hidden;
+      pointer-events: none;
+      border: 1px solid #bfdbfe;
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22);
+      padding: 14px 16px;
+      color: var(--text);
+    }
+
+    .node-preview-card .node-meta {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .node-preview-title {
+      margin: 0 0 8px;
+      font-size: 23px;
+      line-height: 1.35;
+      font-weight: 900;
+      color: #020617;
+    }
+
+    .node-preview-desc {
+      margin: 0;
+      color: #1e293b;
+      font-size: 17px;
+      line-height: 1.55;
+      font-weight: 750;
+    }
+
+    .node-preview-detail {
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px solid #e2e8f0;
+      color: #334155;
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 800;
+    }
+
     .output-panel {
       height: 100%;
       min-height: 0;
@@ -910,8 +957,7 @@
       color: var(--text);
       box-sizing: border-box;
       overflow: visible;
-      transform-origin: center center;
-      transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, padding 0.14s ease;
+      transition: box-shadow 0.14s ease, border-color 0.14s ease;
     }
 
     .ba-node.selected {
@@ -919,25 +965,14 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
     }
 
-    .ba-node.selected,
-    .ba-node.strong-emphasis,
-    .ba-node.edge-focus {
-      transform: scale(1.14);
-      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22), 0 0 0 5px rgba(37, 99, 235, 0.18);
-    }
-
     .ba-node.edge-focus {
       border-color: var(--amber);
-      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22), 0 0 0 5px rgba(180, 83, 9, 0.28);
+      box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.24), 0 8px 20px rgba(15, 23, 42, 0.1);
     }
 
     .ba-node.related-focus {
       border-color: var(--green);
       box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
-    }
-
-    .ba-node.soft-emphasis.related-focus {
-      transform: scale(1.06);
     }
 
     .ba-node.unlinked {
@@ -1002,15 +1037,9 @@
       filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0.18)) drop-shadow(0 6px 18px rgba(15, 23, 42, 0.08));
     }
 
-    .ba-node.decision.selected::before,
-    .ba-node.decision.strong-emphasis::before {
-      background: var(--blue);
-      filter: drop-shadow(0 12px 28px rgba(15, 23, 42, 0.24)) drop-shadow(0 0 8px rgba(37, 99, 235, 0.28));
-    }
-
     .ba-node.decision.edge-focus::before {
       background: var(--amber);
-      filter: drop-shadow(0 12px 28px rgba(15, 23, 42, 0.24)) drop-shadow(0 0 8px rgba(180, 83, 9, 0.42));
+      filter: drop-shadow(0 0 4px rgba(180, 83, 9, 0.42)) drop-shadow(0 8px 20px rgba(15, 23, 42, 0.1));
     }
 
     .ba-node.decision.related-focus::before {
@@ -1084,32 +1113,6 @@
       margin-left: 6px;
       color: var(--red);
       font-size: 13px;
-      font-weight: 900;
-    }
-
-    .ba-node.selected .node-title,
-    .ba-node.strong-emphasis .node-title,
-    .ba-node.edge-focus .node-title {
-      font-size: 24px;
-      font-weight: 900;
-      color: #020617;
-    }
-
-    .ba-node.selected .node-desc,
-    .ba-node.strong-emphasis .node-desc,
-    .ba-node.edge-focus .node-desc {
-      font-size: 18px;
-      font-weight: 800;
-      color: #1e293b;
-    }
-
-    .ba-node.selected .node-detail,
-    .ba-node.strong-emphasis .node-detail,
-    .ba-node.edge-focus .node-detail,
-    .ba-node.selected .node-meta,
-    .ba-node.strong-emphasis .node-meta,
-    .ba-node.edge-focus .node-meta {
-      font-size: 16px;
       font-weight: 900;
     }
 
@@ -2484,7 +2487,6 @@
     function BaNode({ id, data, selected }) {
       const warnings = data.warnings || [];
       const focusClass = data.focus === "edge" ? "edge-focus" : data.focus === "related" ? "related-focus" : "";
-      const emphasisClass = data.emphasis === "strong" ? "strong-emphasis" : data.emphasis === "soft" ? "soft-emphasis" : "";
       const isNote = data.kind === "note";
       return h("div", { style: { width: data.width, height: data.height } },
         h(NodeResizer, {
@@ -2498,7 +2500,11 @@
           onResize: (_event, params) => data.onResize?.(id, params),
           onResizeEnd: (_event, params) => data.onResizeEnd?.(id, params)
         }),
-        h("div", { className: `ba-node ${data.kind} ${selected ? "selected" : ""} ${focusClass} ${emphasisClass} ${warnings.length ? "unlinked" : ""}` },
+        h("div", {
+          className: `ba-node ${data.kind} ${selected ? "selected" : ""} ${focusClass} ${warnings.length ? "unlinked" : ""}`,
+          onMouseEnter: (event) => data.onPreviewEnter?.(id, data, event),
+          onMouseLeave: () => data.onPreviewLeave?.(id)
+        },
           isNote ? null : (data.kind === "decision" ? decisionConnectionHandleDefinitions(data.width, data.height) : connectionHandleDefinitions).map((handle) =>
             h(Handle, {
               key: handle.pointId,
@@ -2724,6 +2730,7 @@
       const [historyState, setHistoryState] = useState({ undo: [], redo: [], log: [] });
       const [autoSaveEnabled, setAutoSaveEnabled] = useState(loadAutoSaveEnabled);
       const [flowViewport, setFlowViewport] = useState({ x: 32, y: 28, zoom: 0.82 });
+      const [nodePreview, setNodePreview] = useState(null);
       const updateNodeInternals = useUpdateNodeInternals();
       const latestSaveRef = React.useRef({ doc, flows, activeFlowId, fontSizeMode });
       const dirtySaveRef = React.useRef(false);
@@ -3096,6 +3103,43 @@
       const flowViewportHeight = viewMode === "present" ? "calc(100vh - 176px)" : "100%";
       const selectedNode = nodes.find((item) => item.id === selectedNodeId);
       const selectedEdge = edges.find((item) => item.id === selectedEdgeId);
+      const hideNodePreview = useCallback((nodeId = "") => {
+        setNodePreview((current) => (!current || (nodeId && current.id !== nodeId) ? current : null));
+      }, []);
+      const showNodePreview = useCallback((nodeId, nodeData, event) => {
+        const canvas = event.currentTarget.closest(".flow-canvas");
+        if (!canvas) return;
+        const canvasRect = canvas.getBoundingClientRect();
+        const nodeRect = event.currentTarget.getBoundingClientRect();
+        const cardWidth = Math.min(380, Math.max(280, canvasRect.width - 24));
+        const cardHeight = 280;
+        const gap = 16;
+        const cursorGap = 24;
+        const spaceRight = canvasRect.right - nodeRect.right;
+        const spaceLeft = nodeRect.left - canvasRect.left;
+        let x;
+        if (spaceRight >= cardWidth + gap || spaceRight >= spaceLeft) {
+          x = nodeRect.right - canvasRect.left + gap;
+        } else {
+          x = nodeRect.left - canvasRect.left - cardWidth - gap;
+        }
+        let y = event.clientY - canvasRect.top + cursorGap;
+        if (y + cardHeight > canvasRect.height - 12) {
+          y = Math.max(12, event.clientY - canvasRect.top - cardHeight - cursorGap);
+        }
+        x = Math.max(12, Math.min(x, canvasRect.width - cardWidth - 12));
+        y = Math.max(12, Math.min(y, canvasRect.height - 120));
+        setNodePreview({
+          id: nodeId,
+          x,
+          y,
+          lane: nodeData.lane,
+          kind: nodeData.kind,
+          title: nodeData.title,
+          desc: nodeData.desc,
+          constraint: nodeData.constraint
+        });
+      }, []);
       const highlightedEdgeIds = useMemo(() => {
         if (selectedEdge) return new Set([selectedEdge.id]);
         if (selectedNodeId) {
@@ -3196,7 +3240,6 @@
       }, [displayLaneGroups, flowWorldHeight]);
       const nodesWithWarnings = useMemo(() => nodes.map((item) => {
         const clamped = clampNodeToLane(item, visibleLanes);
-        const isSelectedNode = selectedNodeId === item.id;
         const isSelectedEdgeEndpoint = selectedEdge && (selectedEdge.source === item.id || selectedEdge.target === item.id);
         const isRelatedNode = !selectedEdge && edgeEndpointNodeIds.has(item.id);
         const focus = isSelectedEdgeEndpoint
@@ -3204,16 +3247,16 @@
           : isRelatedNode
             ? "related"
             : "";
-        const emphasis = isSelectedNode || isSelectedEdgeEndpoint ? "strong" : isRelatedNode ? "soft" : "";
         return {
           ...clamped,
           origin: [0, 0],
-          zIndex: emphasis === "strong" ? 80 : emphasis === "soft" ? 45 : 20,
+          zIndex: isSelectedEdgeEndpoint ? 45 : isRelatedNode ? 35 : 20,
           data: {
             ...makeNodeData(clamped, edges),
             focus,
-            emphasis,
             readonly: viewMode === "present",
+            onPreviewEnter: showNodePreview,
+            onPreviewLeave: hideNodePreview,
             onResizeStart: handleNodeResizeStart,
             onResize: handleNodeResize,
             onResizeEnd: handleNodeResizeEnd
@@ -3223,7 +3266,7 @@
             height: clamped.data.height
           }
         };
-      }), [nodes, edges, visibleLanes, selectedNodeId, selectedEdge, edgeEndpointNodeIds, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
+      }), [nodes, edges, visibleLanes, selectedEdge, edgeEndpointNodeIds, showNodePreview, hideNodePreview, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
       const displayNodes = useMemo(() => laneNodes.concat(nodesWithWarnings), [laneNodes, nodesWithWarnings]);
       const displayEdges = useMemo(() => edges.map((item) => {
         const isSelectedEdge = selectedEdgeId === item.id;
@@ -3970,7 +4013,22 @@
           zoomOnScroll: true
         },
           h(Controls, null)
-        )
+        ),
+        nodePreview ? h("div", {
+          className: "node-preview-card",
+          style: { left: nodePreview.x, top: nodePreview.y }
+        },
+          h("div", { className: "node-meta" },
+            h("span", null,
+              h("span", { className: `node-symbol ${nodePreview.kind}` }, kindSymbol[nodePreview.kind] || "作"),
+              nodePreview.id, " · ", kindLabel[nodePreview.kind] || nodePreview.kind
+            ),
+            h("span", null, nodePreview.kind === "note" ? "右側備註" : nodePreview.lane)
+          ),
+          h("h3", { className: "node-preview-title" }, nodePreview.title),
+          nodePreview.desc ? h("p", { className: "node-preview-desc" }, nodePreview.desc) : null,
+          nodePreview.constraint ? h("div", { className: "node-preview-detail" }, "限制：", nodePreview.constraint) : null
+        ) : null
       );
       };
 
