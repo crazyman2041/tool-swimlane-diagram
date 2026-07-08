@@ -26,6 +26,12 @@
 
     * { box-sizing: border-box; }
 
+    html,
+    body,
+    #root {
+      height: 100%;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
@@ -33,6 +39,7 @@
       font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
       font-size: 15px;
       line-height: 1.5;
+      overflow: hidden;
     }
 
     button, input, textarea, select {
@@ -82,6 +89,9 @@
     }
 
     header {
+      position: sticky;
+      top: 0;
+      z-index: 60;
       min-height: 64px;
       display: flex;
       align-items: center;
@@ -104,6 +114,14 @@
       margin: 2px 0 0;
       color: #cbd5e1;
       font-size: 13px;
+    }
+
+    .edit-mode,
+    .presentation-mode {
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
     }
 
     .toolbar {
@@ -189,17 +207,28 @@
     .tag.danger { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
     .tag.formal { color: #065f46; border-color: #86efac; background: #dcfce7; }
     .tag.draft { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+    .tag.version-toggle {
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .tag.version-toggle:hover,
+    .tag.version-toggle:focus-visible {
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+      outline: none;
+    }
 
     .app {
       display: grid;
-      grid-template-columns: minmax(350px, 440px) minmax(860px, 1fr);
+      grid-template-columns: minmax(350px, 440px) minmax(0, 1fr);
       gap: 16px;
       padding: 16px;
-      min-height: calc(100vh - 64px);
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .app.collapsed {
-      grid-template-columns: 48px minmax(860px, 1fr);
+      grid-template-columns: 48px minmax(0, 1fr);
     }
 
     .side {
@@ -207,13 +236,29 @@
       align-content: start;
       gap: 16px;
       min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .side-content {
+      display: grid;
+      align-content: start;
+      gap: 16px;
+      min-height: 0;
+      max-height: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-gutter: stable;
     }
 
     .side-rail {
       display: none;
       align-items: center;
       justify-content: center;
-      min-height: calc(100vh - 96px);
+      min-height: 0;
+      height: 100%;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--surface);
@@ -272,6 +317,7 @@
 
     .panel-body {
       padding: 14px 16px 16px;
+      min-height: 0;
     }
 
     .field {
@@ -367,10 +413,13 @@
     }
 
     .flow-area {
+      position: relative;
       display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 16px;
+      grid-template-rows: 1fr;
       min-width: 0;
+      min-height: 0;
+      height: 100%;
+      padding-right: 34px;
     }
 
     .presentation-app {
@@ -380,6 +429,7 @@
 
     .presentation-app .flow-area {
       grid-template-rows: 1fr;
+      padding-right: 0;
     }
 
     .tabs {
@@ -565,6 +615,34 @@
       background: #fff;
     }
 
+    .right-view-tabs {
+      position: absolute;
+      top: 10px;
+      right: 0;
+      z-index: 20;
+      display: grid;
+      gap: 6px;
+    }
+
+    .right-view-tab {
+      width: 34px;
+      min-height: 70px;
+      padding: 8px 4px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      border-color: #bfdbfe;
+      border-radius: 8px 0 0 8px;
+      background: #eff6ff;
+      color: var(--blue);
+      line-height: 1;
+    }
+
+    .right-view-tab.active {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -609,7 +687,8 @@
     }
 
     .flow-shell {
-      min-height: 720px;
+      height: 100%;
+      min-height: 0;
       display: grid;
       grid-template-rows: auto auto 1fr;
     }
@@ -621,7 +700,19 @@
 
     .flow-canvas {
       position: relative;
-      min-height: 640px;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .output-panel {
+      height: 100%;
+      min-height: 0;
+    }
+
+    .output-panel .panel-body {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
     }
 
     .presentation-mode .flow-canvas {
@@ -679,11 +770,14 @@
     }
 
     .sticky-lane-bar-wrap {
-      position: sticky;
+      position: absolute;
       top: 0;
+      left: 0;
+      right: 0;
       z-index: 35;
       height: 54px;
       overflow: hidden;
+      pointer-events: none;
       border-bottom: 1px solid #cbd5e1;
       background: rgba(248, 250, 252, 0.98);
       box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
@@ -1174,6 +1268,12 @@
       font: 13px/1.6 Consolas, "Courier New", monospace;
     }
 
+    .output-markdown {
+      min-height: 0;
+      max-height: none;
+      height: 100%;
+    }
+
     .output-head {
       display: flex;
       align-items: center;
@@ -1183,10 +1283,26 @@
     }
 
     @media (max-width: 1280px) {
+      body { overflow: auto; }
       .app { grid-template-columns: 1fr; }
+      .app {
+        height: auto;
+        overflow: visible;
+      }
       .app.collapsed { grid-template-columns: 1fr; }
       .app.collapsed .side-content { display: block; }
       .app.collapsed .side-rail { display: none; }
+      .side {
+        height: auto;
+        overflow: visible;
+      }
+      .side-content {
+        max-height: none;
+        overflow: visible;
+      }
+      .flow-area {
+        min-height: 720px;
+      }
       .flow-brief-body { grid-template-columns: 1fr 1fr; }
     }
 
@@ -2514,6 +2630,8 @@
       const [flows, setFlows] = useState(initialState.flows);
       const [activeFlowId, setActiveFlowId] = useState(initialState.activeFlowId);
       const [collapsed, setCollapsed] = useState(false);
+      const [rightPane, setRightPane] = useState("canvas");
+      const [openPanels, setOpenPanels] = useState({ manager: false, doc: false, editor: false });
       const [selectedNodeId, setSelectedNodeId] = useState(initialState.flows.find((flow) => flow.id === initialState.activeFlowId)?.nodes[0]?.id || "");
       const [selectedEdgeId, setSelectedEdgeId] = useState("");
       const [connectSourceId, setConnectSourceId] = useState("");
@@ -2554,10 +2672,19 @@
       const [nodes, setNodes, onNodesChange] = useNodesState(activeFlow.nodes);
       const [edges, setEdges, onEdgesChange] = useEdgesState(activeFlow.edges);
 
+      const setPanelOpen = useCallback((panel, open) => {
+        setOpenPanels((current) => ({ ...current, [panel]: open }));
+      }, []);
+
+      const focusPanel = useCallback((panel) => {
+        setOpenPanels({ manager: false, doc: false, editor: false, [panel]: true });
+      }, []);
+
       const selectFlow = useCallback((flowId) => {
         if (!flows.some((flow) => flow.id === flowId)) return;
+        focusPanel("manager");
         setActiveFlowId(flowId);
-      }, [flows]);
+      }, [flows, focusPanel]);
 
       const makeHistorySnapshot = useCallback(() => {
         const nextNodes = prepareNodesForSave(nodes);
@@ -2891,7 +3018,7 @@
       const displayLanes = useMemo(() => visibleLanes.concat([noteLaneName]), [visibleLanes]);
       const laneBoardWidth = Math.max(visibleLanes.length * laneWidth + noteLaneWidth, 1120);
       const flowWorldHeight = canvasHeight;
-      const flowViewportHeight = viewMode === "present" ? "calc(100vh - 176px)" : "680px";
+      const flowViewportHeight = viewMode === "present" ? "calc(100vh - 176px)" : "100%";
       const selectedNode = nodes.find((item) => item.id === selectedNodeId);
       const selectedEdge = edges.find((item) => item.id === selectedEdgeId);
       const highlightedEdgeIds = useMemo(() => {
@@ -3219,11 +3346,23 @@
       };
 
       const updateFlowVersion = (value) => {
+        focusPanel("doc");
         recordHistory("改泳道圖版本", `flow-version:${activeFlowId}`);
         setFlows((items) => items.map((item) => item.id === activeFlowId ? { ...item, version: flowVersions.includes(value) ? value : "非正式" } : item));
       };
 
+      const toggleFlowVersion = (flowId = activeFlowId) => {
+        const targetFlow = flows.find((item) => item.id === flowId);
+        if (!targetFlow) return;
+        focusPanel("doc");
+        const currentVersion = flowVersions.includes(targetFlow.version) ? targetFlow.version : "非正式";
+        const nextVersion = currentVersion === "正式" ? "非正式" : "正式";
+        recordHistory("改泳道圖版本", `flow-version:${flowId}`);
+        setFlows((items) => items.map((item) => item.id === flowId ? { ...item, version: nextVersion } : item));
+      };
+
       const moveFlow = (flowId, direction) => {
+        focusPanel("manager");
         recordHistory("調整 Tab 順序", "flow-order");
         setFlows((items) => {
           const index = items.findIndex((item) => item.id === flowId);
@@ -3279,6 +3418,7 @@
       const addNodeToFlow = () => {
         recordHistory("新增節點", "node:add");
         const id = `N${nodes.length + 1}`;
+        focusPanel("editor");
         setNodes((items) => clampFlowNodes(items.concat(node(id, "申請人", "task", lanePadding, 240 + nodes.length * 28, "新增流程節點", "請填寫此節點的流程說明。", "待補"))));
         setSelectedNodeId(id);
         setSelectedEdgeId("");
@@ -3287,6 +3427,7 @@
       const addNoteToFlow = () => {
         recordHistory("新增備註", "note:add");
         const id = `R${nodes.filter((item) => isNoteNode(item)).length + 1}`;
+        focusPanel("editor");
         setNodes((items) => clampFlowNodes(items.concat(noteNode(id, 120 + nodes.length * 16, "新增備註", "請填寫此流程的補充說明。"))));
         setSelectedNodeId(id);
         setSelectedEdgeId("");
@@ -3384,6 +3525,7 @@
       };
 
       const addFlow = () => {
+        focusPanel("manager");
         recordHistory("新增泳道圖", "flow:add");
         const id = `flow-${flows.length + 1}`;
         const next = {
@@ -3405,6 +3547,7 @@
       const duplicateFlow = () => {
         const source = flows.find((item) => item.id === activeFlowId);
         if (!source) return;
+        focusPanel("manager");
         recordHistory("複製泳道圖", "flow:duplicate");
         const id = `flow-${flows.length + 1}`;
         const copy = JSON.parse(JSON.stringify(source));
@@ -3417,6 +3560,7 @@
 
       const deleteFlow = () => {
         if (flows.length <= 1) return;
+        focusPanel("manager");
         recordHistory("刪除泳道圖", `flow:delete:${activeFlowId}`);
         const next = flows.filter((item) => item.id !== activeFlowId);
         setFlows(next);
@@ -3635,7 +3779,7 @@
       const renderFlowCanvas = (readonly = false) => {
         const defaultFlowViewport = readonly ? { x: 24, y: 28, zoom: 0.9 } : { x: 32, y: 28, zoom: 0.82 };
         return h("div", { className: `flow-canvas ${readonly ? "presentation-canvas" : ""}`, style: { height: flowViewportHeight, minHeight: flowViewportHeight } },
-        readonly ? renderStickyLaneBar() : null,
+        renderStickyLaneBar(),
         h(ReactFlow, {
           key: `${activeFlowId}-${readonly ? "present" : "edit"}`,
           style: { height: "100%" },
@@ -3660,6 +3804,7 @@
           },
           onNodeClick: (_event, clickedNode) => {
             if (String(clickedNode.id).startsWith("lane-")) return;
+            focusPanel("editor");
             const clickedIsNote = isNoteNode(clickedNode);
             if (!readonly && !clickedIsNote && connectSourceId && connectSourceId !== clickedNode.id) {
               connectNodes(connectSourceId, clickedNode.id);
@@ -3672,15 +3817,21 @@
             setSelectedNodeId(clickedNode.id);
             setSelectedEdgeId("");
           },
-          onEdgeClick: (_event, clickedEdge) => { setSelectedEdgeId(clickedEdge.id); setSelectedNodeId(""); },
+          onEdgeClick: (_event, clickedEdge) => {
+            focusPanel("editor");
+            setSelectedEdgeId(clickedEdge.id);
+            setSelectedNodeId("");
+          },
           onNodeDoubleClick: (_event, clickedNode) => {
             if (readonly || String(clickedNode.id).startsWith("lane-")) return;
+            focusPanel("editor");
             setSelectedNodeId(clickedNode.id);
             setSelectedEdgeId("");
             setEditDialog("node");
           },
           onEdgeDoubleClick: (_event, clickedEdge) => {
             if (readonly) return;
+            focusPanel("editor");
             setSelectedEdgeId(clickedEdge.id);
             setSelectedNodeId("");
             setEditDialog("edge");
@@ -3716,7 +3867,10 @@
           key: flow.id,
           type: "button",
           className: `tab ${flow.id === activeFlowId ? "active" : ""}`,
-          onClick: () => setActiveFlowId(flow.id)
+          onClick: () => {
+            focusPanel("manager");
+            setActiveFlowId(flow.id);
+          }
         },
           flow.name,
           h("span", { className: `tab-version ${flow.version === "正式" ? "formal" : "draft"}` }, flow.version || "非正式")
@@ -3769,6 +3923,31 @@
         );
       };
 
+      const renderRightViewTabs = () => h("div", { className: "right-view-tabs", "aria-label": "右側檢視切換" },
+        h("button", {
+          type: "button",
+          className: `right-view-tab ${rightPane === "canvas" ? "active" : ""}`,
+          title: "切換到畫布",
+          onClick: () => setRightPane("canvas")
+        }, "畫布"),
+        h("button", {
+          type: "button",
+          className: `right-view-tab ${rightPane === "output" ? "active" : ""}`,
+          title: `切換到輸出：01-業務流程.md（${documentVersion}）`,
+          onClick: () => setRightPane("output")
+        }, "輸出")
+      );
+
+      const renderOutputPane = () => h("section", { className: "panel output-panel" },
+        h("div", { className: "panel-body" },
+          h("div", { className: "output-head" },
+            h("h2", null, `輸出：01-業務流程.md（${documentVersion}）`),
+            h("button", { type: "button", onClick: () => copyText(makeMarkdown(doc, flows)) }, "複製 Markdown")
+          ),
+          h("pre", { className: "output-markdown" }, makeMarkdown(doc, flows))
+        )
+      );
+
       return h("div", { className: `font-${fontSizeMode} ${viewMode === "present" ? "presentation-mode" : "edit-mode"}` },
         h("header", null,
           h("div", null,
@@ -3806,35 +3985,35 @@
                 h("button", { type: "button", onClick: () => setCollapsed(true) }, "向左收合"),
                 h("span", { className: "tag info" }, selectedEdge ? "正在編輯箭頭" : connectSourceId ? `箭頭起點：${connectSourceId}` : connectTargetId ? `箭頭終點：${connectTargetId}` : "點節點後編輯")
               ),
-              renderFlowManagerPanel({ flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow }),
-              renderDocPanel(activeFlowDoc, updateFlowDoc, activeFlow, updateFlowVersion),
-              renderNodePanel({ activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes })
+              renderFlowManagerPanel({ flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow, open: openPanels.manager, onToggle: (open) => setPanelOpen("manager", open) }),
+              renderDocPanel(activeFlowDoc, updateFlowDoc, activeFlow, updateFlowVersion, openPanels.doc, (open) => setPanelOpen("doc", open)),
+              renderNodePanel({ activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes, open: openPanels.editor, onToggle: (open) => setPanelOpen("editor", open) })
             )
           ),
           h("section", { className: "flow-area" },
-            h("section", { className: "panel flow-shell" },
-              renderFlowTabs(),
-              h("div", { className: "flow-toolbar" },
-                h("div", null,
-                  h("strong", null, activeFlow.name),
-                  h("span", { className: `tag ${activeFlow.version === "正式" ? "formal" : "draft"}`, style: { marginLeft: "8px" } }, activeFlow.version || "非正式"),
-                  h("p", { className: "hint" }, "節點在泳道中自動水平置中，只能上下拖曳；拖曳或調整大小後，同泳道節點會自動避開重疊並保留間距。")
+            renderRightViewTabs(),
+            rightPane === "canvas"
+              ? h("section", { className: "panel flow-shell" },
+                renderFlowTabs(),
+                h("div", { className: "flow-toolbar" },
+                  h("div", null,
+                    h("strong", null, activeFlow.name),
+                    h("button", {
+                      type: "button",
+                      className: `tag version-toggle ${activeFlow.version === "正式" ? "formal" : "draft"}`,
+                      style: { marginLeft: "8px" },
+                      title: "點擊切換正式 / 非正式",
+                      onClick: () => toggleFlowVersion(activeFlow.id)
+                    }, activeFlow.version || "非正式"),
+                    h("p", { className: "hint" }, "節點在泳道中自動水平置中，只能上下拖曳；拖曳或調整大小後，同泳道節點會自動避開重疊並保留間距。")
+                  ),
+                  h("div", { className: "toolbar" },
+                    h("button", { type: "button", className: "primary", onClick: addNodeToFlow }, "新增截點")
+                  )
                 ),
-                h("div", { className: "toolbar" },
-                  h("button", { type: "button", className: "primary", onClick: addNodeToFlow }, "新增截點")
-                )
-              ),
-              renderFlowCanvas(false)
-            ),
-            h("section", { className: "panel" },
-              h("div", { className: "panel-body" },
-                h("div", { className: "output-head" },
-                  h("h2", null, `輸出：01-業務流程.md（${documentVersion}）`),
-                  h("button", { type: "button", onClick: () => copyText(makeMarkdown(doc, flows)) }, "複製 Markdown")
-                ),
-                h("pre", null, makeMarkdown(doc, flows))
+                renderFlowCanvas(false)
               )
-            )
+              : renderOutputPane()
           )
         ),
         renderEditDialog()
@@ -3842,8 +4021,8 @@
     }
 
     function renderFlowManagerPanel(props) {
-      const { flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow } = props;
-      return h("details", { className: "panel", open: true },
+      const { flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow, open, onToggle } = props;
+      return h("details", { className: "panel", open, onToggle: (event) => onToggle?.(event.currentTarget.open) },
         h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "泳道圖管理"), h("span", null, "▸"))),
         h("div", { className: "panel-body" },
           h("div", { className: "toolbar", style: { marginBottom: "12px" } },
@@ -3919,8 +4098,8 @@
       );
     }
 
-    function renderDocPanel(doc, updateDoc, activeFlow, updateFlowVersion) {
-      return h("details", { className: "panel", open: true },
+    function renderDocPanel(doc, updateDoc, activeFlow, updateFlowVersion, open, onToggle) {
+      return h("details", { className: "panel", open, onToggle: (event) => onToggle?.(event.currentTarget.open) },
         h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "目前泳道圖描述"), h("span", null, "▸"))),
         h("div", { className: "panel-body" },
           h("p", { className: "hint" }, "此區只描述上方目前選取的泳道圖；流程問題、待確認與補充說明請寫在右側備註節點。"),
@@ -3934,8 +4113,8 @@
     }
 
     function renderNodePanel(props) {
-      const { activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes } = props;
-      return h("details", { className: "panel", open: true },
+      const { activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes, open, onToggle } = props;
+      return h("details", { className: "panel", open, onToggle: (event) => onToggle?.(event.currentTarget.open) },
         h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "節點 / 箭頭編輯"), h("span", null, "▸"))),
         h("div", { className: "panel-body" },
           inputField("目前流程圖名稱", "flowName", activeFlow.name, updateFlowName),
