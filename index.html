@@ -690,12 +690,12 @@
       height: 100%;
       min-height: 0;
       display: grid;
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto auto auto minmax(0, 1fr);
     }
 
     .presentation-mode .flow-shell {
       min-height: calc(100vh - 88px);
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto auto auto minmax(0, 1fr);
     }
 
     .flow-canvas {
@@ -770,10 +770,7 @@
     }
 
     .sticky-lane-bar-wrap {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      position: relative;
       z-index: 35;
       height: 54px;
       overflow: hidden;
@@ -821,13 +818,7 @@
     }
 
     .lane-title {
-      position: sticky;
-      top: 0;
-      z-index: 3;
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(248, 250, 252, 0.98);
-      font-weight: 900;
+      display: none;
     }
 
     .lane-title small {
@@ -3779,7 +3770,6 @@
       const renderFlowCanvas = (readonly = false) => {
         const defaultFlowViewport = readonly ? { x: 24, y: 28, zoom: 0.9 } : { x: 32, y: 28, zoom: 0.82 };
         return h("div", { className: `flow-canvas ${readonly ? "presentation-canvas" : ""}`, style: { height: flowViewportHeight, minHeight: flowViewportHeight } },
-        renderStickyLaneBar(),
         h(ReactFlow, {
           key: `${activeFlowId}-${readonly ? "present" : "edit"}`,
           style: { height: "100%" },
@@ -3887,6 +3877,7 @@
           h("section", { className: "panel flow-shell" },
             renderFlowTabs(),
             renderFlowBrief(activeFlowDoc, activeFlow, visibleLaneGroups),
+            renderStickyLaneBar(),
             renderFlowCanvas(true)
           )
         )
@@ -4011,6 +4002,7 @@
                     h("button", { type: "button", className: "primary", onClick: addNodeToFlow }, "新增截點")
                   )
                 ),
+                renderStickyLaneBar(),
                 renderFlowCanvas(false)
               )
               : renderOutputPane()
