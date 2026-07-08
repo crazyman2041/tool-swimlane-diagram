@@ -466,6 +466,40 @@
       background: #f8fafc;
     }
 
+    @media (hover: hover) and (pointer: fine) {
+      .flow-shell > .tabs {
+        position: relative;
+        z-index: 50;
+        max-height: 22px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        opacity: 0.82;
+        scrollbar-width: none;
+        transition: max-height 0.16s ease, padding 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+      }
+
+      .flow-shell > .tabs:hover,
+      .flow-shell > .tabs.expanded,
+      .flow-shell > .tabs.dragging {
+        max-height: 86px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+        opacity: 1;
+        scrollbar-width: thin;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+      }
+
+      .flow-shell > .tabs::-webkit-scrollbar {
+        height: 0;
+      }
+
+      .flow-shell > .tabs:hover::-webkit-scrollbar,
+      .flow-shell > .tabs.expanded::-webkit-scrollbar,
+      .flow-shell > .tabs.dragging::-webkit-scrollbar {
+        height: 10px;
+      }
+    }
+
     .tab {
       flex: 0 0 auto;
       border-radius: 999px;
@@ -3718,7 +3752,14 @@
       };
 
       const tabScrollHandlers = {
+        onPointerEnter: (event) => {
+          event.currentTarget.classList.add("expanded");
+        },
+        onMouseEnter: (event) => {
+          event.currentTarget.classList.add("expanded");
+        },
         onWheel: (event) => {
+          event.currentTarget.classList.add("expanded");
           const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
           if (!delta) return;
           event.currentTarget.scrollLeft += delta;
@@ -3759,7 +3800,22 @@
           tabDragRef.current.moved = false;
           event.currentTarget.classList.remove("dragging");
         },
+        onFocus: (event) => {
+          event.currentTarget.classList.add("expanded");
+        },
+        onBlur: (event) => {
+          if (event.currentTarget.contains(event.relatedTarget)) return;
+          event.currentTarget.classList.remove("expanded");
+        },
         onPointerLeave: (event) => {
+          event.currentTarget.classList.remove("expanded");
+          if (!tabDragRef.current.active) return;
+          tabDragRef.current.active = false;
+          tabDragRef.current.moved = false;
+          event.currentTarget.classList.remove("dragging");
+        },
+        onMouseLeave: (event) => {
+          event.currentTarget.classList.remove("expanded");
           if (!tabDragRef.current.active) return;
           tabDragRef.current.active = false;
           tabDragRef.current.moved = false;
