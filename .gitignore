@@ -1,3 +1,8 @@
 .DS_Store
 Thumbs.db
 *.log
+tool-swimlane-diagram.autosave.json
+*.paused
+*.bak-*
+*.optimistic-*.json
+*.tmp-*
