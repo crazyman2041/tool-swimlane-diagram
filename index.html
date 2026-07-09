@@ -1593,7 +1593,7 @@
         ],
         edges: [
           edge("L1", "L2", "填寫完成"),
-          edge("L2", "L3", "送主管審核", { sourceHandle: "left-2", targetHandle: "right-1" }),
+          edge("L2", "L3", "送主管審核", { sourceHandle: "bottom-2", targetHandle: "top-2" }),
           edge("L3", "L4", "退回補件", { sourceHandle: "left-3", targetHandle: "right-1" }),
           edge("L4", "L2", "重新送出", { sourceHandle: "right-3", targetHandle: "left-3" }),
           edge("L3", "L5", "核准", { sourceHandle: "right-3", targetHandle: "left-1" }),
@@ -1681,10 +1681,10 @@
     const PERSIST_STORE_NAME = "fileHandles";
     const PERSIST_HANDLE_KEY = "activeJsonFile";
     const AUTO_PERSIST_FILE_NAME = "tool-swimlane-diagram-autosave-v2.data";
-    const LOCAL_AUTOSAVE_API = "";
-    const LOCAL_AUTOSAVE_HEALTH_API = "";
-    const LOCAL_AUTOSAVE_CONTROL_API = "";
-    const LOCAL_AUTOSAVE_OPEN_API = "";
+    const LOCAL_AUTOSAVE_API = "http://127.0.0.1:8788/ba-flow-autosave";
+    const LOCAL_AUTOSAVE_HEALTH_API = "http://127.0.0.1:8788/health";
+    const LOCAL_AUTOSAVE_CONTROL_API = "http://127.0.0.1:8788/autosave-control";
+    const LOCAL_AUTOSAVE_OPEN_API = "http://127.0.0.1:8788/open-folder";
     const LOCAL_AUTOSAVE_FILE_NAME = "tool-swimlane-diagram.autosave.json";
     const AUTOSAVE_ENABLED_KEY = "tool.swimlane.diagram.autosaveEnabled";
     const fontSizeModes = ["small", "medium", "large"];
@@ -1990,11 +1990,28 @@
     }
 
     async function getServerPersistentTarget() {
-      return null;
+      const response = await fetch(LOCAL_AUTOSAVE_HEALTH_API, { cache: "no-store" });
+      if (!response.ok) throw new Error("Autosave server unavailable");
+      const status = await response.json().catch(() => ({}));
+      return {
+        kind: "server",
+        name: LOCAL_AUTOSAVE_FILE_NAME,
+        api: LOCAL_AUTOSAVE_API,
+        paused: Boolean(status.paused),
+        baseSavedAt: status.savedAt || "",
+        hash: status.hash || ""
+      };
     }
 
     async function setServerAutoSavePaused(paused) {
-      return Boolean(paused);
+      const response = await fetch(LOCAL_AUTOSAVE_CONTROL_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paused })
+      });
+      if (!response.ok) throw new Error("Autosave control failed");
+      const status = await response.json().catch(() => ({}));
+      return Boolean(status.paused);
     }
 
     async function getAutoPersistentHandle() {
@@ -2012,11 +2029,23 @@
       if (handle?.kind === "server") {
         const response = await fetch(handle.api, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-BA-Flow-Base-SavedAt": handle.baseSavedAt || ""
+          },
           body: JSON.stringify(payload)
         });
         if (response.status === 423) return { ok: false, paused: true };
+        if (response.status === 409) {
+          const status = await response.json().catch(() => ({}));
+          handle.baseSavedAt = status.currentSavedAt || response.headers.get("X-BA-Flow-SavedAt") || "";
+          handle.hash = status.currentHash || response.headers.get("X-BA-Flow-Hash") || "";
+          return { ok: false, paused: false, conflict: true };
+        }
         if (!response.ok) throw new Error("Autosave server write failed");
+        const status = await response.json().catch(() => ({}));
+        handle.baseSavedAt = status.savedAt || response.headers.get("X-BA-Flow-SavedAt") || payload.savedAt || "";
+        handle.hash = status.hash || response.headers.get("X-BA-Flow-Hash") || "";
         return { ok: true, paused: false };
       }
       const writable = await handle.createWritable();
@@ -2033,7 +2062,10 @@
         const text = await response.text();
         if (!text.trim()) return null;
         const normalized = normalizeSavedState(JSON.parse(text));
-        return assertNoUnknownLanes(normalized, "自動儲存 JSON");
+        assertNoUnknownLanes(normalized, "自動儲存 JSON");
+        handle.baseSavedAt = normalized?.savedAt || response.headers.get("X-BA-Flow-SavedAt") || "";
+        handle.hash = response.headers.get("X-BA-Flow-Hash") || "";
+        return normalized;
       }
       const file = await handle.getFile();
       const text = await file.text();
@@ -2910,6 +2942,10 @@
               setAutoSaveEnabled(false);
               rememberAutoSaveEnabled(false);
               setPersistentStatus(`自動儲存 JSON 已暫停：${handle.name}`);
+            } else if (writeResult?.conflict) {
+              fileOk = false;
+              dirtySaveRef.current = true;
+              setPersistentStatus(`自動儲存 JSON 有新版本，請重新整理：${handle.name}`);
             } else {
               wrotePersistentFile = true;
               setLastJsonSavedAt(payload.savedAt);
@@ -2984,14 +3020,22 @@
           latestSaveRef.current = newestState;
           const payload = makeSavePayload(newestState.doc, newestState.flows, newestState.activeFlowId, newestState.fontSizeMode);
           const writeResult = await writePersistentState(handle, payload);
-          if (!writeResult?.paused) saveStatePayload(payload);
+          if (!writeResult?.paused && !writeResult?.conflict) saveStatePayload(payload);
           setLastJsonSavedAt(writeResult?.paused ? newestState.savedAt || "" : payload.savedAt);
-          dirtySaveRef.current = Boolean(writeResult?.paused);
+          dirtySaveRef.current = Boolean(writeResult?.paused || writeResult?.conflict);
           const sourceText = fileState && newestState === initialState && savedAtTime(initialState) > savedAtTime(fileState)
             ? "瀏覽器暫存較新，已同步回 JSON"
             : "已載入並同步";
-          setPersistentStatus(writeResult?.paused ? `${statusPrefix} 已載入，寫入暫停：${handle.name}` : `${statusPrefix} ${sourceText}：${handle.name}`);
-          setSaveStatus(writeResult?.paused ? `已載入自動儲存 JSON，但自動存檔關閉：${handle.name}` : `已載入自動儲存 JSON：${handle.name}`);
+          setPersistentStatus(writeResult?.paused
+            ? `${statusPrefix} 已載入，寫入暫停：${handle.name}`
+            : writeResult?.conflict
+              ? `${statusPrefix} 已載入，但 JSON 已有新版本：${handle.name}`
+              : `${statusPrefix} ${sourceText}：${handle.name}`);
+          setSaveStatus(writeResult?.paused
+            ? `已載入自動儲存 JSON，但自動存檔關閉：${handle.name}`
+            : writeResult?.conflict
+              ? `已載入自動儲存 JSON，但請重新整理確認最新版本：${handle.name}`
+              : `已載入自動儲存 JSON：${handle.name}`);
           return handle;
         }
         const latest = latestSaveRef.current;
@@ -3822,9 +3866,20 @@
 
       const toggleAutoSave = async () => {
         const nextEnabled = !autoSaveEnabled;
-        setAutoSaveEnabled(nextEnabled);
-        rememberAutoSaveEnabled(nextEnabled);
-        if (!nextEnabled) {
+        let enabled = nextEnabled;
+        try {
+          const handle = persistentHandleRef.current;
+          if (handle?.kind === "server") {
+            const paused = await setServerAutoSavePaused(!nextEnabled);
+            enabled = !paused;
+          }
+        } catch {
+          setSaveStatus("自動存檔開關失敗，請確認 autosave 服務是否啟動");
+          return;
+        }
+        setAutoSaveEnabled(enabled);
+        rememberAutoSaveEnabled(enabled);
+        if (!enabled) {
           window.localStorage.removeItem(STORAGE_KEY);
           setPersistentStatus(`自動儲存 JSON 已暫停：${LOCAL_AUTOSAVE_FILE_NAME}`);
           setSaveStatus("自動存檔已關閉，JSON 與 UI 暫存都不會自動寫入");
@@ -3856,7 +3911,13 @@
       };
 
       const openJsonLocation = async () => {
-        setSaveStatus(`JSON 位置：${LOCAL_AUTOSAVE_FILE_NAME}`);
+        try {
+          const response = await fetch(LOCAL_AUTOSAVE_OPEN_API, { cache: "no-store" });
+          if (!response.ok) throw new Error("Open folder failed");
+          setSaveStatus(`已開啟 JSON 位置：${LOCAL_AUTOSAVE_FILE_NAME}`);
+        } catch {
+          setSaveStatus(`JSON 位置：${LOCAL_AUTOSAVE_FILE_NAME}`);
+        }
       };
 
       const clearAutosave = () => {
