@@ -26,6 +26,12 @@
 
     * { box-sizing: border-box; }
 
+    html,
+    body,
+    #root {
+      height: 100%;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
@@ -33,6 +39,7 @@
       font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
       font-size: 15px;
       line-height: 1.5;
+      overflow: hidden;
     }
 
     button, input, textarea, select {
@@ -82,6 +89,9 @@
     }
 
     header {
+      position: sticky;
+      top: 0;
+      z-index: 60;
       min-height: 64px;
       display: flex;
       align-items: center;
@@ -104,6 +114,14 @@
       margin: 2px 0 0;
       color: #cbd5e1;
       font-size: 13px;
+    }
+
+    .edit-mode,
+    .presentation-mode {
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
     }
 
     .toolbar {
@@ -189,31 +207,63 @@
     .tag.danger { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
     .tag.formal { color: #065f46; border-color: #86efac; background: #dcfce7; }
     .tag.draft { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+    .tag.version-toggle {
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .tag.version-toggle:hover,
+    .tag.version-toggle:focus-visible {
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+      outline: none;
+    }
 
     .app {
       display: grid;
-      grid-template-columns: minmax(350px, 440px) minmax(860px, 1fr);
+      grid-template-columns: minmax(350px, 440px) minmax(0, 1fr);
       gap: 16px;
       padding: 16px;
-      min-height: calc(100vh - 64px);
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .app.collapsed {
-      grid-template-columns: 48px minmax(860px, 1fr);
+      grid-template-columns: 48px minmax(0, 1fr);
     }
 
     .side {
       display: grid;
-      align-content: start;
+      grid-template-rows: minmax(0, 1fr);
+      align-content: stretch;
       gap: 16px;
       min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .side-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+      max-height: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-gutter: stable;
+    }
+
+    .side-content > * {
+      flex: 0 0 auto;
     }
 
     .side-rail {
       display: none;
       align-items: center;
       justify-content: center;
-      min-height: calc(100vh - 96px);
+      min-height: 0;
+      height: 100%;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--surface);
@@ -272,6 +322,7 @@
 
     .panel-body {
       padding: 14px 16px 16px;
+      min-height: 0;
     }
 
     .field {
@@ -367,10 +418,13 @@
     }
 
     .flow-area {
+      position: relative;
       display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 16px;
+      grid-template-rows: 1fr;
       min-width: 0;
+      min-height: 0;
+      height: 100%;
+      padding-right: 34px;
     }
 
     .presentation-app {
@@ -380,6 +434,7 @@
 
     .presentation-app .flow-area {
       grid-template-rows: 1fr;
+      padding-right: 0;
     }
 
     .tabs {
@@ -414,6 +469,40 @@
 
     .tabs::-webkit-scrollbar-track {
       background: #f8fafc;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .flow-shell > .tabs {
+        position: relative;
+        z-index: 50;
+        max-height: 22px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        opacity: 0.82;
+        scrollbar-width: none;
+        transition: max-height 0.16s ease, padding 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+      }
+
+      .flow-shell > .tabs:hover,
+      .flow-shell > .tabs.expanded,
+      .flow-shell > .tabs.dragging {
+        max-height: 86px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+        opacity: 1;
+        scrollbar-width: thin;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+      }
+
+      .flow-shell > .tabs::-webkit-scrollbar {
+        height: 0;
+      }
+
+      .flow-shell > .tabs:hover::-webkit-scrollbar,
+      .flow-shell > .tabs.expanded::-webkit-scrollbar,
+      .flow-shell > .tabs.dragging::-webkit-scrollbar {
+        height: 10px;
+      }
     }
 
     .tab {
@@ -454,6 +543,10 @@
     .flow-order-list {
       display: grid;
       gap: 8px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-gutter: stable;
     }
 
     .history-actions {
@@ -565,6 +658,34 @@
       background: #fff;
     }
 
+    .right-view-tabs {
+      position: absolute;
+      top: 10px;
+      right: 0;
+      z-index: 20;
+      display: grid;
+      gap: 6px;
+    }
+
+    .right-view-tab {
+      width: 34px;
+      min-height: 70px;
+      padding: 8px 4px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      border-color: #bfdbfe;
+      border-radius: 8px 0 0 8px;
+      background: #eff6ff;
+      color: var(--blue);
+      line-height: 1;
+    }
+
+    .right-view-tab.active {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -609,19 +730,81 @@
     }
 
     .flow-shell {
-      min-height: 720px;
+      height: 100%;
+      min-height: 0;
       display: grid;
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto auto auto minmax(0, 1fr);
     }
 
     .presentation-mode .flow-shell {
       min-height: calc(100vh - 88px);
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto auto auto minmax(0, 1fr);
     }
 
     .flow-canvas {
       position: relative;
-      min-height: 640px;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .node-preview-card {
+      position: absolute;
+      z-index: 95;
+      width: min(380px, calc(100% - 24px));
+      max-height: min(420px, calc(100% - 24px));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      pointer-events: auto;
+      border: 1px solid #bfdbfe;
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22);
+      padding: 14px 16px;
+      color: var(--text);
+    }
+
+    .node-preview-card .node-meta {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .node-preview-title {
+      margin: 0 0 8px;
+      font-size: 23px;
+      line-height: 1.35;
+      font-weight: 900;
+      color: #020617;
+    }
+
+    .node-preview-desc {
+      margin: 0;
+      color: #1e293b;
+      font-size: 17px;
+      line-height: 1.55;
+      font-weight: 750;
+    }
+
+    .node-preview-detail {
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px solid #e2e8f0;
+      color: #334155;
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 800;
+    }
+
+    .output-panel {
+      height: 100%;
+      min-height: 0;
+    }
+
+    .output-panel .panel-body {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
     }
 
     .presentation-mode .flow-canvas {
@@ -679,11 +862,11 @@
     }
 
     .sticky-lane-bar-wrap {
-      position: sticky;
-      top: 0;
+      position: relative;
       z-index: 35;
       height: 54px;
       overflow: hidden;
+      pointer-events: none;
       border-bottom: 1px solid #cbd5e1;
       background: rgba(248, 250, 252, 0.98);
       box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
@@ -727,13 +910,7 @@
     }
 
     .lane-title {
-      position: sticky;
-      top: 0;
-      z-index: 3;
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(248, 250, 252, 0.98);
-      font-weight: 900;
+      display: none;
     }
 
     .lane-title small {
@@ -763,6 +940,10 @@
       cursor: default;
     }
 
+    .react-flow__node {
+      overflow: visible;
+    }
+
     .react-flow__edge-path {
       stroke-linecap: round;
       stroke-linejoin: round;
@@ -787,6 +968,7 @@
       color: var(--text);
       box-sizing: border-box;
       overflow: visible;
+      transition: box-shadow 0.14s ease, border-color 0.14s ease;
     }
 
     .ba-node.selected {
@@ -1174,6 +1356,12 @@
       font: 13px/1.6 Consolas, "Courier New", monospace;
     }
 
+    .output-markdown {
+      min-height: 0;
+      max-height: none;
+      height: 100%;
+    }
+
     .output-head {
       display: flex;
       align-items: center;
@@ -1183,10 +1371,27 @@
     }
 
     @media (max-width: 1280px) {
+      body { overflow: auto; }
       .app { grid-template-columns: 1fr; }
+      .app {
+        height: auto;
+        overflow: visible;
+      }
       .app.collapsed { grid-template-columns: 1fr; }
-      .app.collapsed .side-content { display: block; }
+      .app.collapsed .side-content { display: flex; }
       .app.collapsed .side-rail { display: none; }
+      .side {
+        height: auto;
+        overflow: visible;
+      }
+      .side-content {
+        height: auto;
+        max-height: none;
+        overflow: visible;
+      }
+      .flow-area {
+        min-height: 720px;
+      }
       .flow-brief-body { grid-template-columns: 1fr 1fr; }
     }
 
@@ -1388,7 +1593,7 @@
         ],
         edges: [
           edge("L1", "L2", "填寫完成"),
-          edge("L2", "L3", "送主管審核", { sourceHandle: "left-2", targetHandle: "right-1" }),
+          edge("L2", "L3", "送主管審核", { sourceHandle: "bottom-2", targetHandle: "top-2" }),
           edge("L3", "L4", "退回補件", { sourceHandle: "left-3", targetHandle: "right-1" }),
           edge("L4", "L2", "重新送出", { sourceHandle: "right-3", targetHandle: "left-3" }),
           edge("L3", "L5", "核准", { sourceHandle: "right-3", targetHandle: "left-1" }),
@@ -1476,10 +1681,10 @@
     const PERSIST_STORE_NAME = "fileHandles";
     const PERSIST_HANDLE_KEY = "activeJsonFile";
     const AUTO_PERSIST_FILE_NAME = "tool-swimlane-diagram-autosave-v2.data";
-    const LOCAL_AUTOSAVE_API = "";
-    const LOCAL_AUTOSAVE_HEALTH_API = "";
-    const LOCAL_AUTOSAVE_CONTROL_API = "";
-    const LOCAL_AUTOSAVE_OPEN_API = "";
+    const LOCAL_AUTOSAVE_API = "http://127.0.0.1:8788/ba-flow-autosave";
+    const LOCAL_AUTOSAVE_HEALTH_API = "http://127.0.0.1:8788/health";
+    const LOCAL_AUTOSAVE_CONTROL_API = "http://127.0.0.1:8788/autosave-control";
+    const LOCAL_AUTOSAVE_OPEN_API = "http://127.0.0.1:8788/open-folder";
     const LOCAL_AUTOSAVE_FILE_NAME = "tool-swimlane-diagram.autosave.json";
     const AUTOSAVE_ENABLED_KEY = "tool.swimlane.diagram.autosaveEnabled";
     const fontSizeModes = ["small", "medium", "large"];
@@ -1590,26 +1795,74 @@
       return savedAtTime(primaryState) >= savedAtTime(secondaryState) ? primaryState : secondaryState;
     }
 
+    let initialLoadErrorMessage = "";
+
+    function collectUnknownLaneIssues(state) {
+      const issues = [];
+      (state?.flows || []).forEach((flow) => {
+        const flowDoc = getFlowDoc(flow);
+        const customLaneGroups = flowDoc.customLaneGroups || {};
+        const allowed = new Set(laneOptions.concat(Object.keys(customLaneGroups)));
+        (flow.nodes || []).forEach((nodeItem) => {
+          const rawLane = nodeItem?.data?.lane || nodeItem?.data?.actor || "";
+          const lane = normalizeLane(rawLane);
+          if (!lane || lane === noteLaneName || nodeItem?.data?.kind === "note") return;
+          if (!allowed.has(lane)) {
+            issues.push({
+              flowName: flowDoc.featureName || flow.name || flow.id || "未命名泳道圖",
+              nodeId: nodeItem.id || "未命名節點",
+              nodeTitle: nodeItem?.data?.title || "未命名節點",
+              lane
+            });
+          }
+        });
+      });
+      return issues;
+    }
+
+    function formatUnknownLaneMessage(issues, sourceLabel = "資料") {
+      const lines = issues.slice(0, 8).map((issue) => {
+        return `- ${issue.flowName} / ${issue.nodeId} ${issue.nodeTitle}：泳道「${issue.lane}」不在目前泳道選單中`;
+      });
+      const more = issues.length > 8 ? `\n...另有 ${issues.length - 8} 筆` : "";
+      return `${sourceLabel}含有未知泳道，已停止載入或存檔，避免把節點自動改錯。\n請先在該泳道圖新增同名泳道，或修正 JSON 的節點泳道。\n${lines.join("\n")}${more}`;
+    }
+
+    function assertNoUnknownLanes(state, sourceLabel = "資料") {
+      const issues = collectUnknownLaneIssues(state);
+      if (issues.length) {
+        throw new Error(formatUnknownLaneMessage(issues, sourceLabel));
+      }
+      return state;
+    }
+
+    function userFacingErrorMessage(error, fallback) {
+      return error?.message || fallback;
+    }
+
     function loadSavedState() {
       try {
         if (!loadAutoSaveEnabled()) return getDefaultState();
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (!raw) return getDefaultState();
         const parsed = JSON.parse(raw);
-        return normalizeSavedState(parsed) || getDefaultState();
-      } catch {
+        const normalized = normalizeSavedState(parsed) || getDefaultState();
+        return assertNoUnknownLanes(normalized, "瀏覽器暫存");
+      } catch (error) {
+        initialLoadErrorMessage = userFacingErrorMessage(error, "瀏覽器暫存載入失敗，已改用內建範例。");
         return getDefaultState();
       }
     }
 
     function makeSavePayload(doc, flows, activeFlowId, fontSizeMode) {
-      return {
+      const payload = {
         doc,
         flows: flows.map(sanitizeFlowForSave),
         activeFlowId,
         fontSizeMode,
         savedAt: new Date().toISOString()
       };
+      return assertNoUnknownLanes(payload, "目前畫布");
     }
 
     function formatJsonSavedTime(savedAt) {
@@ -1737,11 +1990,28 @@
     }
 
     async function getServerPersistentTarget() {
-      return null;
+      const response = await fetch(LOCAL_AUTOSAVE_HEALTH_API, { cache: "no-store" });
+      if (!response.ok) throw new Error("Autosave server unavailable");
+      const status = await response.json().catch(() => ({}));
+      return {
+        kind: "server",
+        name: LOCAL_AUTOSAVE_FILE_NAME,
+        api: LOCAL_AUTOSAVE_API,
+        paused: Boolean(status.paused),
+        baseSavedAt: status.savedAt || "",
+        hash: status.hash || ""
+      };
     }
 
     async function setServerAutoSavePaused(paused) {
-      return Boolean(paused);
+      const response = await fetch(LOCAL_AUTOSAVE_CONTROL_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paused })
+      });
+      if (!response.ok) throw new Error("Autosave control failed");
+      const status = await response.json().catch(() => ({}));
+      return Boolean(status.paused);
     }
 
     async function getAutoPersistentHandle() {
@@ -1759,11 +2029,23 @@
       if (handle?.kind === "server") {
         const response = await fetch(handle.api, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-BA-Flow-Base-SavedAt": handle.baseSavedAt || ""
+          },
           body: JSON.stringify(payload)
         });
         if (response.status === 423) return { ok: false, paused: true };
+        if (response.status === 409) {
+          const status = await response.json().catch(() => ({}));
+          handle.baseSavedAt = status.currentSavedAt || response.headers.get("X-BA-Flow-SavedAt") || "";
+          handle.hash = status.currentHash || response.headers.get("X-BA-Flow-Hash") || "";
+          return { ok: false, paused: false, conflict: true };
+        }
         if (!response.ok) throw new Error("Autosave server write failed");
+        const status = await response.json().catch(() => ({}));
+        handle.baseSavedAt = status.savedAt || response.headers.get("X-BA-Flow-SavedAt") || payload.savedAt || "";
+        handle.hash = status.hash || response.headers.get("X-BA-Flow-Hash") || "";
         return { ok: true, paused: false };
       }
       const writable = await handle.createWritable();
@@ -1779,13 +2061,18 @@
         if (!response.ok) throw new Error("Autosave server read failed");
         const text = await response.text();
         if (!text.trim()) return null;
-        return normalizeSavedState(JSON.parse(text));
+        const normalized = normalizeSavedState(JSON.parse(text));
+        assertNoUnknownLanes(normalized, "自動儲存 JSON");
+        handle.baseSavedAt = normalized?.savedAt || response.headers.get("X-BA-Flow-SavedAt") || "";
+        handle.hash = response.headers.get("X-BA-Flow-Hash") || "";
+        return normalized;
       }
       const file = await handle.getFile();
       const text = await file.text();
       if (!text.trim()) return null;
       const parsed = JSON.parse(text);
-      return normalizeSavedState(parsed);
+      const normalized = normalizeSavedState(parsed);
+      return assertNoUnknownLanes(normalized, "持久 JSON");
     }
 
     function node(id, lane, kind, x, y, title, desc, constraint = "", size = {}) {
@@ -1819,8 +2106,7 @@
 
     function normalizeLane(value) {
       if (value === noteLaneName) return noteLaneName;
-      const mapped = legacyLaneMap[value] || value;
-      const normalized = String(mapped || "").trim();
+      const normalized = String(value || "").trim();
       return normalized || "申請人";
     }
 
@@ -2246,6 +2532,7 @@
       const warnings = data.warnings || [];
       const focusClass = data.focus === "edge" ? "edge-focus" : data.focus === "related" ? "related-focus" : "";
       const isNote = data.kind === "note";
+      const isDecision = data.kind === "decision";
       return h("div", { style: { width: data.width, height: data.height } },
         h(NodeResizer, {
           isVisible: selected && !data.readonly,
@@ -2258,8 +2545,12 @@
           onResize: (_event, params) => data.onResize?.(id, params),
           onResizeEnd: (_event, params) => data.onResizeEnd?.(id, params)
         }),
-        h("div", { className: `ba-node ${data.kind} ${selected ? "selected" : ""} ${focusClass} ${warnings.length ? "unlinked" : ""}` },
-          isNote ? null : (data.kind === "decision" ? decisionConnectionHandleDefinitions(data.width, data.height) : connectionHandleDefinitions).map((handle) =>
+        h("div", {
+          className: `ba-node ${data.kind} ${selected ? "selected" : ""} ${focusClass} ${warnings.length ? "unlinked" : ""}`,
+          onMouseEnter: (event) => data.onPreviewEnter?.(id, data, event),
+          onMouseLeave: () => data.onPreviewLeave?.(id)
+        },
+          isNote ? null : (isDecision ? decisionConnectionHandleDefinitions(data.width, data.height) : connectionHandleDefinitions).map((handle) =>
             h(Handle, {
               key: handle.pointId,
               id: handle.pointId,
@@ -2269,7 +2560,7 @@
               style: handle.style
             })
           ),
-          h("div", { className: "node-meta" },
+          isDecision ? null : h("div", { className: "node-meta" },
             h("span", null,
               h("span", { className: `node-symbol ${data.kind}` }, kindSymbol[data.kind] || "作"),
               id, " · ", kindLabel[data.kind],
@@ -2278,8 +2569,8 @@
             h("span", null, isNote ? "右側備註" : data.lane)
           ),
           h("h3", { className: "node-title" }, data.title),
-          h("p", { className: "node-desc" }, data.desc),
-          data.constraint ? h("div", { className: "node-detail" }, "限制：", data.constraint) : null
+          isDecision ? null : h("p", { className: "node-desc" }, data.desc),
+          !isDecision && data.constraint ? h("div", { className: "node-detail" }, "限制：", data.constraint) : null
         )
       );
     }
@@ -2465,13 +2756,15 @@
       const [flows, setFlows] = useState(initialState.flows);
       const [activeFlowId, setActiveFlowId] = useState(initialState.activeFlowId);
       const [collapsed, setCollapsed] = useState(false);
+      const [rightPane, setRightPane] = useState("canvas");
+      const [openPanels, setOpenPanels] = useState({ manager: false, doc: false, editor: false });
       const [selectedNodeId, setSelectedNodeId] = useState(initialState.flows.find((flow) => flow.id === initialState.activeFlowId)?.nodes[0]?.id || "");
       const [selectedEdgeId, setSelectedEdgeId] = useState("");
       const [connectSourceId, setConnectSourceId] = useState("");
       const [connectTargetId, setConnectTargetId] = useState("");
       const [editDialog, setEditDialog] = useState(null);
       const [resizingNodeId, setResizingNodeId] = useState("");
-      const [saveStatus, setSaveStatus] = useState("已載入");
+      const [saveStatus, setSaveStatus] = useState(initialLoadErrorMessage || "已載入");
       const [persistentStatus, setPersistentStatus] = useState(
         supportsAutoPersistentFile() ? "自動儲存 JSON 準備中" : "此瀏覽器不支援自動儲存 JSON"
       );
@@ -2482,6 +2775,8 @@
       const [historyState, setHistoryState] = useState({ undo: [], redo: [], log: [] });
       const [autoSaveEnabled, setAutoSaveEnabled] = useState(loadAutoSaveEnabled);
       const [flowViewport, setFlowViewport] = useState({ x: 32, y: 28, zoom: 0.82 });
+      const [nodePreview, setNodePreview] = useState(null);
+      const nodePreviewHideTimerRef = React.useRef(null);
       const updateNodeInternals = useUpdateNodeInternals();
       const latestSaveRef = React.useRef({ doc, flows, activeFlowId, fontSizeMode });
       const dirtySaveRef = React.useRef(false);
@@ -2505,10 +2800,19 @@
       const [nodes, setNodes, onNodesChange] = useNodesState(activeFlow.nodes);
       const [edges, setEdges, onEdgesChange] = useEdgesState(activeFlow.edges);
 
+      const setPanelOpen = useCallback((panel, open) => {
+        setOpenPanels((current) => ({ ...current, [panel]: open }));
+      }, []);
+
+      const focusPanel = useCallback((panel) => {
+        setOpenPanels({ manager: false, doc: false, editor: false, [panel]: true });
+      }, []);
+
       const selectFlow = useCallback((flowId) => {
         if (!flows.some((flow) => flow.id === flowId)) return;
+        focusPanel("manager");
         setActiveFlowId(flowId);
-      }, [flows]);
+      }, [flows, focusPanel]);
 
       const makeHistorySnapshot = useCallback(() => {
         const nextNodes = prepareNodesForSave(nodes);
@@ -2614,7 +2918,16 @@
         if (!dirtySaveRef.current && !force) return true;
         autosaveInFlightRef.current = true;
         const latest = latestSaveRef.current;
-        const payload = makeSavePayload(latest.doc, latest.flows, latest.activeFlowId, latest.fontSizeMode);
+        let payload;
+        try {
+          payload = makeSavePayload(latest.doc, latest.flows, latest.activeFlowId, latest.fontSizeMode);
+        } catch (error) {
+          autosaveInFlightRef.current = false;
+          dirtySaveRef.current = true;
+          setPersistentStatus("資料驗證失敗，未寫入 JSON");
+          if (updateStatus) setSaveStatus(userFacingErrorMessage(error, "資料驗證失敗，未寫入 JSON"));
+          return false;
+        }
         const localOk = saveStatePayload(payload);
         dirtySaveRef.current = false;
         let fileOk = true;
@@ -2629,6 +2942,10 @@
               setAutoSaveEnabled(false);
               rememberAutoSaveEnabled(false);
               setPersistentStatus(`自動儲存 JSON 已暫停：${handle.name}`);
+            } else if (writeResult?.conflict) {
+              fileOk = false;
+              dirtySaveRef.current = true;
+              setPersistentStatus(`自動儲存 JSON 有新版本，請重新整理：${handle.name}`);
             } else {
               wrotePersistentFile = true;
               setLastJsonSavedAt(payload.savedAt);
@@ -2678,7 +2995,15 @@
           setAutoSaveEnabled(true);
           rememberAutoSaveEnabled(true);
         }
-        const fileState = await readPersistentState(handle).catch(() => null);
+        let fileState = null;
+        try {
+          fileState = await readPersistentState(handle);
+        } catch (error) {
+          dirtySaveRef.current = false;
+          setPersistentStatus(`${statusPrefix} 載入失敗：${handle.name}`);
+          setSaveStatus(userFacingErrorMessage(error, "自動儲存 JSON 載入失敗，請修正 JSON 後重新整理。"));
+          return handle;
+        }
         const newestState = pickNewestState(initialState, fileState);
         if (newestState) {
           const fileFlow = newestState.flows.find((flow) => flow.id === newestState.activeFlowId) || newestState.flows[0];
@@ -2695,14 +3020,22 @@
           latestSaveRef.current = newestState;
           const payload = makeSavePayload(newestState.doc, newestState.flows, newestState.activeFlowId, newestState.fontSizeMode);
           const writeResult = await writePersistentState(handle, payload);
-          if (!writeResult?.paused) saveStatePayload(payload);
+          if (!writeResult?.paused && !writeResult?.conflict) saveStatePayload(payload);
           setLastJsonSavedAt(writeResult?.paused ? newestState.savedAt || "" : payload.savedAt);
-          dirtySaveRef.current = Boolean(writeResult?.paused);
+          dirtySaveRef.current = Boolean(writeResult?.paused || writeResult?.conflict);
           const sourceText = fileState && newestState === initialState && savedAtTime(initialState) > savedAtTime(fileState)
             ? "瀏覽器暫存較新，已同步回 JSON"
             : "已載入並同步";
-          setPersistentStatus(writeResult?.paused ? `${statusPrefix} 已載入，寫入暫停：${handle.name}` : `${statusPrefix} ${sourceText}：${handle.name}`);
-          setSaveStatus(writeResult?.paused ? `已載入自動儲存 JSON，但自動存檔關閉：${handle.name}` : `已載入自動儲存 JSON：${handle.name}`);
+          setPersistentStatus(writeResult?.paused
+            ? `${statusPrefix} 已載入，寫入暫停：${handle.name}`
+            : writeResult?.conflict
+              ? `${statusPrefix} 已載入，但 JSON 已有新版本：${handle.name}`
+              : `${statusPrefix} ${sourceText}：${handle.name}`);
+          setSaveStatus(writeResult?.paused
+            ? `已載入自動儲存 JSON，但自動存檔關閉：${handle.name}`
+            : writeResult?.conflict
+              ? `已載入自動儲存 JSON，但請重新整理確認最新版本：${handle.name}`
+              : `已載入自動儲存 JSON：${handle.name}`);
           return handle;
         }
         const latest = latestSaveRef.current;
@@ -2750,6 +3083,12 @@
           skipNextDirtyRef.current = false;
           return;
         }
+        if (initialLoadErrorMessage) {
+          dirtySaveRef.current = false;
+          setPersistentStatus("資料驗證失敗，未連接自動儲存 JSON");
+          setSaveStatus(initialLoadErrorMessage);
+          return;
+        }
         dirtySaveRef.current = true;
         setSaveStatus(autoSaveEnabled ? "有未儲存變更，15 秒內自動儲存" : "有未儲存變更，自動存檔已關閉");
         if (immediateAutosaveRef.current && autoSaveEnabled) {
@@ -2782,10 +3121,16 @@
       }, [flushAutosave, autoSaveEnabled]);
 
       React.useEffect(() => {
+        if (initialLoadErrorMessage) {
+          persistentHandleRef.current = null;
+          persistentReadyRef.current = false;
+          setPersistentStatus("資料驗證失敗，未連接自動儲存 JSON");
+          return;
+        }
         let cancelled = false;
         setupAutoPersistentJson()
           .catch(() => {
-            if (!cancelled) {
+            if (!cancelled && !initialLoadErrorMessage) {
               persistentHandleRef.current = null;
               persistentReadyRef.current = false;
               setPersistentStatus("自動儲存 JSON 建立失敗");
@@ -2813,9 +3158,61 @@
       const displayLanes = useMemo(() => visibleLanes.concat([noteLaneName]), [visibleLanes]);
       const laneBoardWidth = Math.max(visibleLanes.length * laneWidth + noteLaneWidth, 1120);
       const flowWorldHeight = canvasHeight;
-      const flowViewportHeight = viewMode === "present" ? "calc(100vh - 176px)" : "680px";
+      const flowViewportHeight = viewMode === "present" ? "calc(100vh - 176px)" : "100%";
       const selectedNode = nodes.find((item) => item.id === selectedNodeId);
       const selectedEdge = edges.find((item) => item.id === selectedEdgeId);
+      const clearNodePreviewHideTimer = useCallback(() => {
+        if (!nodePreviewHideTimerRef.current) return;
+        window.clearTimeout(nodePreviewHideTimerRef.current);
+        nodePreviewHideTimerRef.current = null;
+      }, []);
+      const hideNodePreview = useCallback((nodeId = "") => {
+        clearNodePreviewHideTimer();
+        setNodePreview((current) => (!current || (nodeId && current.id !== nodeId) ? current : null));
+      }, [clearNodePreviewHideTimer]);
+      const scheduleNodePreviewHide = useCallback((nodeId = "", delay = 360) => {
+        clearNodePreviewHideTimer();
+        nodePreviewHideTimerRef.current = window.setTimeout(() => {
+          nodePreviewHideTimerRef.current = null;
+          setNodePreview((current) => (!current || (nodeId && current.id !== nodeId) ? current : null));
+        }, delay);
+      }, [clearNodePreviewHideTimer]);
+      const showNodePreview = useCallback((nodeId, nodeData, event) => {
+        clearNodePreviewHideTimer();
+        const canvas = event.currentTarget.closest(".flow-canvas");
+        if (!canvas) return;
+        const canvasRect = canvas.getBoundingClientRect();
+        const nodeRect = event.currentTarget.getBoundingClientRect();
+        const cardWidth = Math.min(380, Math.max(280, canvasRect.width - 24));
+        const cardHeight = 280;
+        const gap = 16;
+        const cursorGap = 24;
+        const spaceRight = canvasRect.right - nodeRect.right;
+        const spaceLeft = nodeRect.left - canvasRect.left;
+        let x;
+        if (spaceRight >= cardWidth + gap || spaceRight >= spaceLeft) {
+          x = nodeRect.right - canvasRect.left + gap;
+        } else {
+          x = nodeRect.left - canvasRect.left - cardWidth - gap;
+        }
+        let y = event.clientY - canvasRect.top + cursorGap;
+        if (y + cardHeight > canvasRect.height - 12) {
+          y = Math.max(12, event.clientY - canvasRect.top - cardHeight - cursorGap);
+        }
+        x = Math.max(12, Math.min(x, canvasRect.width - cardWidth - 12));
+        y = Math.max(12, Math.min(y, canvasRect.height - 120));
+        setNodePreview({
+          id: nodeId,
+          x,
+          y,
+          lane: nodeData.lane,
+          kind: nodeData.kind,
+          title: nodeData.title,
+          desc: nodeData.desc,
+          constraint: nodeData.constraint
+        });
+      }, [clearNodePreviewHideTimer]);
+      React.useEffect(() => () => clearNodePreviewHideTimer(), [clearNodePreviewHideTimer]);
       const highlightedEdgeIds = useMemo(() => {
         if (selectedEdge) return new Set([selectedEdge.id]);
         if (selectedNodeId) {
@@ -2916,19 +3313,23 @@
       }, [displayLaneGroups, flowWorldHeight]);
       const nodesWithWarnings = useMemo(() => nodes.map((item) => {
         const clamped = clampNodeToLane(item, visibleLanes);
-        const focus = selectedEdge && (selectedEdge.source === item.id || selectedEdge.target === item.id)
+        const isSelectedEdgeEndpoint = selectedEdge && (selectedEdge.source === item.id || selectedEdge.target === item.id);
+        const isRelatedNode = !selectedEdge && edgeEndpointNodeIds.has(item.id);
+        const focus = isSelectedEdgeEndpoint
           ? "edge"
-          : edgeEndpointNodeIds.has(item.id)
+          : isRelatedNode
             ? "related"
             : "";
         return {
           ...clamped,
           origin: [0, 0],
-          zIndex: 20,
+          zIndex: isSelectedEdgeEndpoint ? 45 : isRelatedNode ? 35 : 20,
           data: {
             ...makeNodeData(clamped, edges),
             focus,
             readonly: viewMode === "present",
+            onPreviewEnter: showNodePreview,
+            onPreviewLeave: scheduleNodePreviewHide,
             onResizeStart: handleNodeResizeStart,
             onResize: handleNodeResize,
             onResizeEnd: handleNodeResizeEnd
@@ -2938,13 +3339,18 @@
             height: clamped.data.height
           }
         };
-      }), [nodes, edges, visibleLanes, selectedEdge, edgeEndpointNodeIds, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
+      }), [nodes, edges, visibleLanes, selectedEdge, edgeEndpointNodeIds, showNodePreview, scheduleNodePreviewHide, handleNodeResizeStart, handleNodeResize, handleNodeResizeEnd, viewMode]);
       const displayNodes = useMemo(() => laneNodes.concat(nodesWithWarnings), [laneNodes, nodesWithWarnings]);
       const displayEdges = useMemo(() => edges.map((item) => {
         const isSelectedEdge = selectedEdgeId === item.id;
         const isHighlighted = highlightedEdgeIds.has(item.id);
         const isResizingEdge = resizingNodeId && (item.source === resizingNodeId || item.target === resizingNodeId);
         const baseEdge = item;
+        const activeLabelFontSize = isSelectedEdge
+          ? Math.round(edgeLabelFontSize * 1.36)
+          : isHighlighted
+            ? Math.round(edgeLabelFontSize * 1.2)
+            : edgeLabelFontSize;
         return {
           ...baseEdge,
           reconnectable: viewMode !== "present",
@@ -2956,11 +3362,17 @@
             strokeDasharray: isResizingEdge ? "8 7" : undefined
           },
           markerEnd: { ...(baseEdge.markerEnd || { type: "arrowclosed" }), color: isSelectedEdge ? "#b45309" : isHighlighted ? "#047857" : "#1d4ed8" },
-          labelStyle: { ...(baseEdge.labelStyle || {}), fontSize: edgeLabelFontSize, fontWeight: 900, fill: "#0f172a" },
+          labelStyle: {
+            ...(baseEdge.labelStyle || {}),
+            fontSize: activeLabelFontSize,
+            fontWeight: 900,
+            fill: isSelectedEdge ? "#92400e" : isHighlighted ? "#065f46" : "#0f172a",
+            strokeWidth: isSelectedEdge || isHighlighted ? 11 : 8
+          },
           pathOptions: baseEdge.type === "cleanStep"
             ? {}
             : { ...(baseEdge.pathOptions || {}), offset: Math.max(Number(baseEdge.pathOptions?.offset) || 0, edgeTextClearance) },
-          labelBgPadding: baseEdge.labelBgPadding || [18, 10],
+          labelBgPadding: isSelectedEdge || isHighlighted ? [24, 14] : baseEdge.labelBgPadding || [18, 10],
           labelBgBorderRadius: baseEdge.labelBgBorderRadius || 8,
           labelBgStyle: { fill: "#fff", stroke: isSelectedEdge ? "#b45309" : isHighlighted ? "#047857" : "#93c5fd" }
         };
@@ -3141,11 +3553,23 @@
       };
 
       const updateFlowVersion = (value) => {
+        focusPanel("doc");
         recordHistory("改泳道圖版本", `flow-version:${activeFlowId}`);
         setFlows((items) => items.map((item) => item.id === activeFlowId ? { ...item, version: flowVersions.includes(value) ? value : "非正式" } : item));
       };
 
+      const toggleFlowVersion = (flowId = activeFlowId) => {
+        const targetFlow = flows.find((item) => item.id === flowId);
+        if (!targetFlow) return;
+        focusPanel("doc");
+        const currentVersion = flowVersions.includes(targetFlow.version) ? targetFlow.version : "非正式";
+        const nextVersion = currentVersion === "正式" ? "非正式" : "正式";
+        recordHistory("改泳道圖版本", `flow-version:${flowId}`);
+        setFlows((items) => items.map((item) => item.id === flowId ? { ...item, version: nextVersion } : item));
+      };
+
       const moveFlow = (flowId, direction) => {
+        focusPanel("manager");
         recordHistory("調整 Tab 順序", "flow-order");
         setFlows((items) => {
           const index = items.findIndex((item) => item.id === flowId);
@@ -3201,6 +3625,7 @@
       const addNodeToFlow = () => {
         recordHistory("新增節點", "node:add");
         const id = `N${nodes.length + 1}`;
+        focusPanel("editor");
         setNodes((items) => clampFlowNodes(items.concat(node(id, "申請人", "task", lanePadding, 240 + nodes.length * 28, "新增流程節點", "請填寫此節點的流程說明。", "待補"))));
         setSelectedNodeId(id);
         setSelectedEdgeId("");
@@ -3209,6 +3634,7 @@
       const addNoteToFlow = () => {
         recordHistory("新增備註", "note:add");
         const id = `R${nodes.filter((item) => isNoteNode(item)).length + 1}`;
+        focusPanel("editor");
         setNodes((items) => clampFlowNodes(items.concat(noteNode(id, 120 + nodes.length * 16, "新增備註", "請填寫此流程的補充說明。"))));
         setSelectedNodeId(id);
         setSelectedEdgeId("");
@@ -3306,6 +3732,7 @@
       };
 
       const addFlow = () => {
+        focusPanel("manager");
         recordHistory("新增泳道圖", "flow:add");
         const id = `flow-${flows.length + 1}`;
         const next = {
@@ -3327,6 +3754,7 @@
       const duplicateFlow = () => {
         const source = flows.find((item) => item.id === activeFlowId);
         if (!source) return;
+        focusPanel("manager");
         recordHistory("複製泳道圖", "flow:duplicate");
         const id = `flow-${flows.length + 1}`;
         const copy = JSON.parse(JSON.stringify(source));
@@ -3339,6 +3767,7 @@
 
       const deleteFlow = () => {
         if (flows.length <= 1) return;
+        focusPanel("manager");
         recordHistory("刪除泳道圖", `flow:delete:${activeFlowId}`);
         const next = flows.filter((item) => item.id !== activeFlowId);
         setFlows(next);
@@ -3404,7 +3833,7 @@
             setSaveStatus("已取消開啟JSON 檔案");
           } else {
             setPersistentStatus("JSON 檔案 載入失敗");
-            setSaveStatus("JSON 檔案 載入失敗");
+            setSaveStatus(userFacingErrorMessage(error, "JSON 檔案 載入失敗"));
           }
         }
       };
@@ -3437,9 +3866,20 @@
 
       const toggleAutoSave = async () => {
         const nextEnabled = !autoSaveEnabled;
-        setAutoSaveEnabled(nextEnabled);
-        rememberAutoSaveEnabled(nextEnabled);
-        if (!nextEnabled) {
+        let enabled = nextEnabled;
+        try {
+          const handle = persistentHandleRef.current;
+          if (handle?.kind === "server") {
+            const paused = await setServerAutoSavePaused(!nextEnabled);
+            enabled = !paused;
+          }
+        } catch {
+          setSaveStatus("自動存檔開關失敗，請確認 autosave 服務是否啟動");
+          return;
+        }
+        setAutoSaveEnabled(enabled);
+        rememberAutoSaveEnabled(enabled);
+        if (!enabled) {
           window.localStorage.removeItem(STORAGE_KEY);
           setPersistentStatus(`自動儲存 JSON 已暫停：${LOCAL_AUTOSAVE_FILE_NAME}`);
           setSaveStatus("自動存檔已關閉，JSON 與 UI 暫存都不會自動寫入");
@@ -3459,7 +3899,11 @@
       };
 
       const exportJson = () => {
-        download(getJsonFilename(), JSON.stringify(makeSavePayload(doc, flows, activeFlowId, fontSizeMode), null, 2), "application/json");
+        try {
+          download(getJsonFilename(), JSON.stringify(makeSavePayload(doc, flows, activeFlowId, fontSizeMode), null, 2), "application/json");
+        } catch (error) {
+          setSaveStatus(userFacingErrorMessage(error, "資料驗證失敗，未匯出 JSON"));
+        }
       };
 
       const exportMarkdown = () => {
@@ -3467,7 +3911,13 @@
       };
 
       const openJsonLocation = async () => {
-        setSaveStatus(`JSON 位置：${LOCAL_AUTOSAVE_FILE_NAME}`);
+        try {
+          const response = await fetch(LOCAL_AUTOSAVE_OPEN_API, { cache: "no-store" });
+          if (!response.ok) throw new Error("Open folder failed");
+          setSaveStatus(`已開啟 JSON 位置：${LOCAL_AUTOSAVE_FILE_NAME}`);
+        } catch {
+          setSaveStatus(`JSON 位置：${LOCAL_AUTOSAVE_FILE_NAME}`);
+        }
       };
 
       const clearAutosave = () => {
@@ -3501,7 +3951,14 @@
       };
 
       const tabScrollHandlers = {
+        onPointerEnter: (event) => {
+          event.currentTarget.classList.add("expanded");
+        },
+        onMouseEnter: (event) => {
+          event.currentTarget.classList.add("expanded");
+        },
         onWheel: (event) => {
+          event.currentTarget.classList.add("expanded");
           const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
           if (!delta) return;
           event.currentTarget.scrollLeft += delta;
@@ -3542,7 +3999,22 @@
           tabDragRef.current.moved = false;
           event.currentTarget.classList.remove("dragging");
         },
+        onFocus: (event) => {
+          event.currentTarget.classList.add("expanded");
+        },
+        onBlur: (event) => {
+          if (event.currentTarget.contains(event.relatedTarget)) return;
+          event.currentTarget.classList.remove("expanded");
+        },
         onPointerLeave: (event) => {
+          event.currentTarget.classList.remove("expanded");
+          if (!tabDragRef.current.active) return;
+          tabDragRef.current.active = false;
+          tabDragRef.current.moved = false;
+          event.currentTarget.classList.remove("dragging");
+        },
+        onMouseLeave: (event) => {
+          event.currentTarget.classList.remove("expanded");
           if (!tabDragRef.current.active) return;
           tabDragRef.current.active = false;
           tabDragRef.current.moved = false;
@@ -3553,7 +4025,6 @@
       const renderFlowCanvas = (readonly = false) => {
         const defaultFlowViewport = readonly ? { x: 24, y: 28, zoom: 0.9 } : { x: 32, y: 28, zoom: 0.82 };
         return h("div", { className: `flow-canvas ${readonly ? "presentation-canvas" : ""}`, style: { height: flowViewportHeight, minHeight: flowViewportHeight } },
-        readonly ? renderStickyLaneBar() : null,
         h(ReactFlow, {
           key: `${activeFlowId}-${readonly ? "present" : "edit"}`,
           style: { height: "100%" },
@@ -3578,6 +4049,7 @@
           },
           onNodeClick: (_event, clickedNode) => {
             if (String(clickedNode.id).startsWith("lane-")) return;
+            focusPanel("editor");
             const clickedIsNote = isNoteNode(clickedNode);
             if (!readonly && !clickedIsNote && connectSourceId && connectSourceId !== clickedNode.id) {
               connectNodes(connectSourceId, clickedNode.id);
@@ -3590,15 +4062,21 @@
             setSelectedNodeId(clickedNode.id);
             setSelectedEdgeId("");
           },
-          onEdgeClick: (_event, clickedEdge) => { setSelectedEdgeId(clickedEdge.id); setSelectedNodeId(""); },
+          onEdgeClick: (_event, clickedEdge) => {
+            focusPanel("editor");
+            setSelectedEdgeId(clickedEdge.id);
+            setSelectedNodeId("");
+          },
           onNodeDoubleClick: (_event, clickedNode) => {
             if (readonly || String(clickedNode.id).startsWith("lane-")) return;
+            focusPanel("editor");
             setSelectedNodeId(clickedNode.id);
             setSelectedEdgeId("");
             setEditDialog("node");
           },
           onEdgeDoubleClick: (_event, clickedEdge) => {
             if (readonly) return;
+            focusPanel("editor");
             setSelectedEdgeId(clickedEdge.id);
             setSelectedNodeId("");
             setEditDialog("edge");
@@ -3625,7 +4103,27 @@
           zoomOnScroll: true
         },
           h(Controls, null)
-        )
+        ),
+        nodePreview ? h("div", {
+          className: "node-preview-card",
+          style: { left: nodePreview.x, top: nodePreview.y },
+          onMouseEnter: clearNodePreviewHideTimer,
+          onMouseLeave: () => scheduleNodePreviewHide(nodePreview.id),
+          onWheel: (event) => event.stopPropagation(),
+          onMouseDown: (event) => event.stopPropagation(),
+          onClick: (event) => event.stopPropagation()
+        },
+          h("div", { className: "node-meta" },
+            h("span", null,
+              h("span", { className: `node-symbol ${nodePreview.kind}` }, kindSymbol[nodePreview.kind] || "作"),
+              nodePreview.id, " · ", kindLabel[nodePreview.kind] || nodePreview.kind
+            ),
+            h("span", null, nodePreview.kind === "note" ? "右側備註" : nodePreview.lane)
+          ),
+          h("h3", { className: "node-preview-title" }, nodePreview.title),
+          nodePreview.desc ? h("p", { className: "node-preview-desc" }, nodePreview.desc) : null,
+          nodePreview.constraint ? h("div", { className: "node-preview-detail" }, "限制：", nodePreview.constraint) : null
+        ) : null
       );
       };
 
@@ -3634,7 +4132,10 @@
           key: flow.id,
           type: "button",
           className: `tab ${flow.id === activeFlowId ? "active" : ""}`,
-          onClick: () => setActiveFlowId(flow.id)
+          onClick: () => {
+            focusPanel("manager");
+            setActiveFlowId(flow.id);
+          }
         },
           flow.name,
           h("span", { className: `tab-version ${flow.version === "正式" ? "formal" : "draft"}` }, flow.version || "非正式")
@@ -3651,6 +4152,7 @@
           h("section", { className: "panel flow-shell" },
             renderFlowTabs(),
             renderFlowBrief(activeFlowDoc, activeFlow, visibleLaneGroups),
+            renderStickyLaneBar(),
             renderFlowCanvas(true)
           )
         )
@@ -3686,6 +4188,31 @@
           )
         );
       };
+
+      const renderRightViewTabs = () => h("div", { className: "right-view-tabs", "aria-label": "右側檢視切換" },
+        h("button", {
+          type: "button",
+          className: `right-view-tab ${rightPane === "canvas" ? "active" : ""}`,
+          title: "切換到畫布",
+          onClick: () => setRightPane("canvas")
+        }, "畫布"),
+        h("button", {
+          type: "button",
+          className: `right-view-tab ${rightPane === "output" ? "active" : ""}`,
+          title: `切換到輸出：01-業務流程.md（${documentVersion}）`,
+          onClick: () => setRightPane("output")
+        }, "輸出")
+      );
+
+      const renderOutputPane = () => h("section", { className: "panel output-panel" },
+        h("div", { className: "panel-body" },
+          h("div", { className: "output-head" },
+            h("h2", null, `輸出：01-業務流程.md（${documentVersion}）`),
+            h("button", { type: "button", onClick: () => copyText(makeMarkdown(doc, flows)) }, "複製 Markdown")
+          ),
+          h("pre", { className: "output-markdown" }, makeMarkdown(doc, flows))
+        )
+      );
 
       return h("div", { className: `font-${fontSizeMode} ${viewMode === "present" ? "presentation-mode" : "edit-mode"}` },
         h("header", null,
@@ -3724,35 +4251,36 @@
                 h("button", { type: "button", onClick: () => setCollapsed(true) }, "向左收合"),
                 h("span", { className: "tag info" }, selectedEdge ? "正在編輯箭頭" : connectSourceId ? `箭頭起點：${connectSourceId}` : connectTargetId ? `箭頭終點：${connectTargetId}` : "點節點後編輯")
               ),
-              renderFlowManagerPanel({ flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow }),
-              renderDocPanel(activeFlowDoc, updateFlowDoc, activeFlow, updateFlowVersion),
-              renderNodePanel({ activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes })
+              renderFlowManagerPanel({ flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow, open: openPanels.manager, onToggle: (open) => setPanelOpen("manager", open) }),
+              renderDocPanel(activeFlowDoc, updateFlowDoc, activeFlow, updateFlowVersion, openPanels.doc, (open) => setPanelOpen("doc", open)),
+              renderNodePanel({ activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes, open: openPanels.editor, onToggle: (open) => setPanelOpen("editor", open) })
             )
           ),
           h("section", { className: "flow-area" },
-            h("section", { className: "panel flow-shell" },
-              renderFlowTabs(),
-              h("div", { className: "flow-toolbar" },
-                h("div", null,
-                  h("strong", null, activeFlow.name),
-                  h("span", { className: `tag ${activeFlow.version === "正式" ? "formal" : "draft"}`, style: { marginLeft: "8px" } }, activeFlow.version || "非正式"),
-                  h("p", { className: "hint" }, "節點在泳道中自動水平置中，只能上下拖曳；拖曳或調整大小後，同泳道節點會自動避開重疊並保留間距。")
+            renderRightViewTabs(),
+            rightPane === "canvas"
+              ? h("section", { className: "panel flow-shell" },
+                renderFlowTabs(),
+                h("div", { className: "flow-toolbar" },
+                  h("div", null,
+                    h("strong", null, activeFlow.name),
+                    h("button", {
+                      type: "button",
+                      className: `tag version-toggle ${activeFlow.version === "正式" ? "formal" : "draft"}`,
+                      style: { marginLeft: "8px" },
+                      title: "點擊切換正式 / 非正式",
+                      onClick: () => toggleFlowVersion(activeFlow.id)
+                    }, activeFlow.version || "非正式"),
+                    h("p", { className: "hint" }, "節點在泳道中自動水平置中，只能上下拖曳；拖曳或調整大小後，同泳道節點會自動避開重疊並保留間距。")
+                  ),
+                  h("div", { className: "toolbar" },
+                    h("button", { type: "button", className: "primary", onClick: addNodeToFlow }, "新增截點")
+                  )
                 ),
-                h("div", { className: "toolbar" },
-                  h("button", { type: "button", className: "primary", onClick: addNodeToFlow }, "新增截點")
-                )
-              ),
-              renderFlowCanvas(false)
-            ),
-            h("section", { className: "panel" },
-              h("div", { className: "panel-body" },
-                h("div", { className: "output-head" },
-                  h("h2", null, `輸出：01-業務流程.md（${documentVersion}）`),
-                  h("button", { type: "button", onClick: () => copyText(makeMarkdown(doc, flows)) }, "複製 Markdown")
-                ),
-                h("pre", null, makeMarkdown(doc, flows))
+                renderStickyLaneBar(),
+                renderFlowCanvas(false)
               )
-            )
+              : renderOutputPane()
           )
         ),
         renderEditDialog()
@@ -3760,8 +4288,8 @@
     }
 
     function renderFlowManagerPanel(props) {
-      const { flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow } = props;
-      return h("details", { className: "panel", open: true },
+      const { flows, activeFlow, moveFlow, selectFlow, flowSearchQuery, setFlowSearchQuery, historyState, undoHistory, redoHistory, addFlow, duplicateFlow, deleteFlow, open, onToggle } = props;
+      return h("details", { className: "panel", open, onToggle: (event) => onToggle?.(event.currentTarget.open) },
         h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "泳道圖管理"), h("span", null, "▸"))),
         h("div", { className: "panel-body" },
           h("div", { className: "toolbar", style: { marginBottom: "12px" } },
@@ -3837,8 +4365,8 @@
       );
     }
 
-    function renderDocPanel(doc, updateDoc, activeFlow, updateFlowVersion) {
-      return h("details", { className: "panel", open: true },
+    function renderDocPanel(doc, updateDoc, activeFlow, updateFlowVersion, open, onToggle) {
+      return h("details", { className: "panel", open, onToggle: (event) => onToggle?.(event.currentTarget.open) },
         h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "目前泳道圖描述"), h("span", null, "▸"))),
         h("div", { className: "panel-body" },
           h("p", { className: "hint" }, "此區只描述上方目前選取的泳道圖；流程問題、待確認與補充說明請寫在右側備註節點。"),
@@ -3852,8 +4380,8 @@
     }
 
     function renderNodePanel(props) {
-      const { activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes } = props;
-      return h("details", { className: "panel", open: true },
+      const { activeFlow, activeHiddenLanes, activeCustomLaneGroups, selectedNode, selectedEdge, updateFlowName, updateNodeData, deleteLane, updateEdge, updateEdgeFields, addNodeToFlow, addNoteToFlow, deleteSelectedNode, deleteSelectedEdge, connectSourceId, setConnectSourceId, connectTargetId, setConnectTargetId, connectNodes, open, onToggle } = props;
+      return h("details", { className: "panel", open, onToggle: (event) => onToggle?.(event.currentTarget.open) },
         h("summary", null, h("div", { className: "panel-head" }, h("h2", null, "節點 / 箭頭編輯"), h("span", null, "▸"))),
         h("div", { className: "panel-body" },
           inputField("目前流程圖名稱", "flowName", activeFlow.name, updateFlowName),

@@ -46,7 +46,7 @@
       ],
       "edges": [
         { "id": "L1-L2", "source": "L1", "target": "L2", "label": "填寫完成", "type": "cleanStep", "sourceHandle": "right-2", "targetHandle": "left-2" },
-        { "id": "L2-L3", "source": "L2", "target": "L3", "label": "送主管審核", "type": "cleanStep", "sourceHandle": "left-2", "targetHandle": "right-1" }
+        { "id": "L2-L3", "source": "L2", "target": "L3", "label": "送主管審核", "type": "cleanStep", "sourceHandle": "bottom-2", "targetHandle": "top-2" }
       ]
     }
   ],
